@@ -1,10 +1,13 @@
 import * as Docker from "dockerode";
 import { copy, emptyDir, mkdirp, remove, writeFile } from "fs-extra";
-import IDeployment from "./models/IDeployment";
-import IDockerRunOptions from "./models/IDockerRunOptions";
-import ILogger from "./models/ILogger";
-import { INameSpaceController } from "./models/INameSpaceController";
-import { IResourceController } from "./models/IResourceController";
+import IDeployment from "./../../models/IDeployment";
+import IDockerRunOptions from "./../../models/IDockerRunOptions";
+import ILogger from "./../../models/ILogger";
+import { INameSpaceController } from "./../../models/INameSpaceController";
+import { IResourceController, IResourceControllerArg } from "./../../models/IResourceController";
+import { IValidatonError, IValidator } from "./../../models/IValidator";
+
+import IProxyDeploymentOptions from "./IProxyDeploymentOptions";
 
 import DockerEvents = require("docker-events");
 
@@ -17,8 +20,6 @@ const configTemplate = (container: Docker.ContainerInspectInfo) => {
 
     return `
 upstream ${domain} {
-			## Can be connect with "bridge" network
-			# eager_mestorf
 			server ${ip}:${port};
 }
 
@@ -34,8 +35,8 @@ server {
 };
 
 export default class ProxyController implements IResourceController {
-    public static create(ctrl: INameSpaceController) {
-        return new ProxyController(ctrl);
+    public static create({ ctrl, validator }: IResourceControllerArg) {
+        return new ProxyController(ctrl, validator);
     }
 
     public name = "proxy";
@@ -46,6 +47,7 @@ export default class ProxyController implements IResourceController {
 
     public constructor(
         private ctrl: INameSpaceController,
+        private validator: IValidator,
     ) {
         this.logger = ctrl.getLogger(this);
         this.ctrl.onContainerChange((c) => this.handler(c));
@@ -64,23 +66,26 @@ export default class ProxyController implements IResourceController {
         return Promise.resolve();
     }
 
-    public onVerifyDeployment(name: string, deployment: IDeployment): Promise<string[]> {
-        const errors: string[] = [];
-        const http = deployment.resources.http;
-
-        if (!http) {
-            return Promise.resolve(errors);
+    public async onVerifyDeployment(name: string, deployment: IDeployment): Promise<IValidatonError[]> {
+        const proxy: IProxyDeploymentOptions = deployment.resources.proxy;
+        if (!proxy) {
+            return [];
         }
 
-        if (this.usedDomains.has(http.domain)) {
-            errors.push(`domain "${http.domain}" is already in use`);
+        const errors = await this.validator.validate("IProxyDeploymentOptions", proxy, "/resources/proxy");
+
+        if (errors.length > 0) {
+            return errors;
         }
 
-        if (this.usedDomains.has(http.domain)) {
-            errors.push(`domain "${http.domain}" is already in use`);
+        if (this.usedDomains.has(proxy.domain)) {
+            errors.push({
+                message: `domain "${proxy.domain}" is already in use`,
+                path: "/domain",
+            });
         }
 
-        return Promise.resolve(errors);
+        return errors;
     }
 
     public async start() {
@@ -113,14 +118,15 @@ export default class ProxyController implements IResourceController {
 
     public onCreateContainerConfig(
         deployment: IDeployment,
+        deploymenName: string,
         containerName: string,
         config: IDockerRunOptions,
     ): Promise<IDockerRunOptions> {
-        const http = deployment.resources.http;
+        const proxy: IProxyDeploymentOptions = deployment.resources.proxy;
 
-        if (http && containerName === http.pod) {
-            config.Labels["claude.proxy.domain"] = http.domain;
-            config.Labels["claude.proxy.port"] = `${http.port}`;
+        if (proxy && containerName === proxy.target) {
+            config.Labels["claude.proxy.domain"] = proxy.domain;
+            config.Labels["claude.proxy.port"] = `${proxy.port}`;
         }
 
         return Promise.resolve(config);
@@ -139,7 +145,7 @@ export default class ProxyController implements IResourceController {
         const dest = this.ctrl.dataFile("volumes", "proxy-etc", "conf.d", "proxy.conf");
         await remove(dest).catch(() => null);
         await writeFile(dest, config);
-        this.logger.info(`create proxy config: ${config}. reloading...`);
+        this.logger.info(`reloading...`);
         await this.container.kill({ signal: "SIGHUP" });
     }
 }

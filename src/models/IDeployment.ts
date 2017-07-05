@@ -1,10 +1,9 @@
-import IPodOptions from "./IDeploymentPodOptions";
-import IDeploymentResources from "./IDeploymentResources";
+import IService from "./IService";
 
 interface IDeployment {
     name?: string;
-    resources: IDeploymentResources;
-    pods: { [name: string]: IPodOptions };
+    resources: { [name: string]: any};
+    services: { [name: string]: IService };
 }
 
 export default IDeployment;

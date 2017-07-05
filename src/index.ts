@@ -1,15 +1,20 @@
 import DockerEvents = require("docker-events");
 import * as Docker from "dockerode";
 import Ctrl from "./NamespaceController";
-import ProxyCtrl from "./ProxyController";
+import ProxyCtrl from "./resources/proxy/ProxyController";
+import StorageCtrl from "./resources/storage/StorageController";
+
 import sms = require("source-map-support");
+import Validator from "./Validator";
 
 sms.install();
 
 (async () => {
   const docker = new Docker();
-  const app = new Ctrl(docker, "test", "claude.dev", [
+  const validator = new Validator();
+  const app = new Ctrl(docker, validator, "test", "claude.dev", [
     ProxyCtrl.create,
+    StorageCtrl.create,
   ]);
   const logger = app.getLogger("root");
 
@@ -22,46 +27,46 @@ sms.install();
   await app.start();
 
   app.assertDeployment("hello-foo", {
-    pods: {
+    resources: {
+      proxy: {
+        domain: "foo.claude.dev",
+        target: "nginx",
+        port: 80,
+      },
+      storage: {
+        volumes: ["website"],
+      }
+    },
+    services: {
       nginx: {
         cmd: [],
-        env: [],
         image: "kitematic/hello-world-nginx",
-        memoryLimit: 1,
         readonly: true,
-        volumes: {
-          "/var": "/website_files",
+        resources: {
+          storage: {
+            website: "/website_files",
+          }
         },
-      },
-    },
-    resources: {
-      http: {
-        domain: "foo.claude.dev",
-        pod: "nginx",
-        port: 80,
       },
     },
   });
 
   app.assertDeployment("hello-bar", {
-    pods: {
-      nginx: {
-        cmd: [],
-        env: [],
-        image: "kitematic/hello-world-nginx",
-        memoryLimit: 1,
-        readonly: true,
-        volumes: {
-          "/var": "/website_files",
-        },
-      },
-    },
     resources: {
-      http: {
+      proxy: {
         domain: "bar.claude.dev",
-        pod: "nginx",
+        target: "nginx",
         port: 80,
       },
     },
+    services: {
+      nginx: {
+        cmd: [],
+        image: "kitematic/hello-world-nginx",
+        readonly: true,
+        resources: {},
+      },
+    },
   });
+
 })();

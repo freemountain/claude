@@ -12,14 +12,19 @@ import { join } from "path";
 import * as R from "ramda";
 import { v4 } from "uuid";
 import IDeployment from "./models/IDeployment";
-import IDeploymentPodOptions from "./models/IDeploymentPodOptions";
 import IDockerRunOptions from "./models/IDockerRunOptions";
 import { IResourceController, ResourceControllerFactory } from "./models/IResourceController";
+import IService from "./models/IService";
+import { IValidatonError } from "./models/IValidator";
+
+import Validator from "./Validator";
 
 import IDockerNetworkInfo from "./models/IDockerNetworkInfo";
 
 import { ContainerHandler, INameSpaceController } from "./models/INameSpaceController";
 import RootLogger from "./RootLogger";
+
+import Containers from "./Containers";
 
 interface IDict<T> { [name: string]: T; }
 
@@ -35,21 +40,29 @@ export default class Application implements INameSpaceController {
     private changeHandler: ContainerHandler[];
     private logger: RootLogger;
     private resourceControllers: IResourceController[];
+    private containers: Containers;
+
     constructor(
         public docker: Docker,
+        private validator: Validator,
         public namespace: string,
         public tld: string,
         controller: ResourceControllerFactory[],
     ) {
         this.events = new DockerEvents({ docker });
-        this.changeHandler = [];
-        this.events.on("_message", (msg) => this.handler(msg));
         this.logger = new RootLogger(this.constructor.name);
-        this.resourceControllers = controller.map((f) => f(this));
+        this.containers = new Containers(docker, this.logger.getLogger("Containers"), this.namespace)
+        this.changeHandler = [];
+        //this.events.on("_message", (msg) => this.handler(msg));
+        this.resourceControllers = controller.map((f) => f({
+            ctrl: this,
+            validator,
+        }));
     }
 
     public onContainerChange(handler: ContainerHandler) {
-        this.changeHandler.push(handler);
+        this.containers.onContainerChange(handler);
+        //this.changeHandler.push(handler);
     }
     public applicationFile(...name: string[]) {
         return join(__dirname, "..", ...name);
@@ -65,16 +78,11 @@ export default class Application implements INameSpaceController {
     }
 
     public async clean(): Promise<void> {
-        const remove = async (containerInfo: Docker.ContainerInfo) => {
-            this.logger.info("removing" + containerInfo.Id.slice(0, 8) + " " + containerInfo.Names);
-            const container = this.docker.getContainer(containerInfo.Id);
-            await container.stop();
-            return container.remove().catch(() => null);
-        };
+        await this.assertContainerRemoved({
+            ctrl: null,
+            namespace: this.namespace,
+        });
 
-        const containers = await this.filterRessources(this.docker.listContainers());
-
-        await Promise.all(containers.map(remove));
         await emptyDir("/var/claude");
     }
 
@@ -88,9 +96,10 @@ export default class Application implements INameSpaceController {
     }
 
     public async start(): Promise<void> {
-        await this.clean();
-
         this.events.start();
+        this.containers.start();
+        await this.clean();
+        await this.validator.load();
 
         await mkdirp("/var/claude/etc-volumes");
         await mkdirp("/var/claude/gen-volumes");
@@ -126,19 +135,31 @@ export default class Application implements INameSpaceController {
     public async assertContainerRemoved(filter: LabelsAA) {
         const containers = await this.filterRessources(this.docker.listContainers(), filter);
 
-        return Promise.all(containers.map((container) => this.removeContainer(container.Id)));
+        return Promise.all(containers.map(async (containerInfo) => {
+            const container = this.docker.getContainer(containerInfo.Id);
+            const cid = containerInfo.Labels["claude.cid"];
+            const name = containerInfo.Names[0].slice(1);
+            this.logger.info(`removing container ${name}`, containerInfo.Labels);
+            const finished = this.awaitContainer("die", cid);
+            container.remove({ force: true }).catch((e) => this.logger.warn(`proplems removing container ${name}`, e));
+            await finished;
+            this.logger.info(`removed container ${name}`);
+        }));
     }
+    /*
+        public async removeContainer(cid: string): Promise<void> {
+            const container = this.docker.getContainer(id);
 
-    public async removeContainer(id: string): Promise<void> {
-        const container = this.docker.getContainer(id);
-        try {
-            await container.stop();
-            await container.remove();
-        } catch (e) {
-            this.logger.warn(`could not remove container ${id.slice(0, 8)}`);
+            try {
+                await container.remove({ force: true });
+                /ill();
+                await container.stop();
+                await container.remove();
+            } catch (e) {
+                this.logger.warn(`could not remove container ${id.slice(0, 8)}`);
+            }
         }
-    }
-
+    */
     public async assertNetwork(name: string): Promise<IDockerNetworkInfo> {
         let network: any;
         const labels = { nid: name };
@@ -167,32 +188,47 @@ export default class Application implements INameSpaceController {
         return network;
     }
 
+    public async cleanDeployment(name: string) {
+        await this.resourceControllers.map((ctrl) => ctrl.onCleanDeployment(name));
+    }
+
     public async assertDeployment(name: string, deployment: IDeployment) {
         const network = this.assertNetwork(`claude-${this.namespace}-${name}`);
-        this.assertContainerRemoved({
+
+        await this.assertContainerRemoved({
             did: name,
         });
 
-        await Promise.all(Object.keys(deployment.pods).map(async (podName) => {
-            const pod = deployment.pods[podName];
+        await this.cleanDeployment(name);
+
+        const allErrors = flatten(await Promise.all(
+            this.resourceControllers.map((ctrl) => ctrl.onVerifyDeployment(name, deployment)),
+        ));
+
+        if (allErrors.length > 0) {
+            throw allErrors;
+        }
+
+        await Promise.all(Object.keys(deployment.services).map(async (serviceName) => {
+            const service = deployment.services[serviceName];
 
             let options: IDockerRunOptions = {
-                Cmd: pod.cmd,
-                Env: pod.env,
+                Cmd: service.cmd,
+                Env: [],
                 ExposedPorts: {},
                 Hostconfig: {
                     AutoRemove: true,
                     Binds: [],
                     PortBindings: {},
                 },
-                Image: pod.image,
+                Image: service.image,
                 Labels: {},
-                Names: [podName],
+                Names: [serviceName],
                 Volumes: {},
             };
 
             options = await this.resourceControllers.reduce((prev, ctrl) => {
-                return prev.then((opts) => ctrl.onCreateContainerConfig(deployment, podName, opts));
+                return prev.then((opts) => ctrl.onCreateContainerConfig(deployment, name, serviceName, opts));
             }, Promise.resolve(options));
 
             this.run(options);
@@ -209,11 +245,12 @@ export default class Application implements INameSpaceController {
 
         Object.assign(options.Labels, predefLabels);
 
-        const getId = this.awaitStart(cid);
+        const getId = this.awaitContainer("create", cid);
+        this.logger.info("create container", options);
+
         this.docker.run(options.Image, options.Cmd, this.logger.getContainerLogStream("nginx-proxy"), options);
 
         const id = await getId;
-        this.logger.info("create container", options);
         return this.docker.getContainer(id);
     }
 
@@ -226,7 +263,7 @@ export default class Application implements INameSpaceController {
         return fromPairs(pairs);
     }
 
-    private awaitStart(cid: string): Promise<string> {
+    private awaitContainer(event: DockerEvents.EventType, cid: string): Promise<string> {
         let handler: R.Arity1Fn;
 
         return new Promise((resolve, reject) => {
@@ -234,21 +271,23 @@ export default class Application implements INameSpaceController {
                 if (!msg.Actor.Attributes["claude.cid"]) {
                     return;
                 }
-                this.events.removeListener("create", handler);
+                this.events.removeListener(event, handler);
                 resolve(msg.id);
             };
-            this.events.on("create", handler);
+            this.events.on(event, handler);
         }).catch((error) => {
-            this.events.removeListener("create", handler);
+            this.events.removeListener(event, handler);
             return Promise.reject(error);
         });
     }
 
     private async handler(msg: DockerEvents.IDockerEvent) {
+        //this.logger.info("handler", [msg.Action, msg.Actor.Attributes]);
         const actions = ["create", "start", "stop", "die"];
         if (msg.Actor.Attributes["claude.namespace"] !== this.namespace || actions.indexOf(msg.Action) === -1) {
             return;
         }
+
         const containerList = await this.filterRessources(this.docker.listContainers());
         const container = await Promise.all(containerList.map((info) => this.docker.getContainer(info.Id).inspect()));
 

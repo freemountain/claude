@@ -10,7 +10,7 @@ declare module "docker-events" {
     export = DockerEvents;
 
     namespace DockerEvents {
-        type EventType = "create" | "start" | "stop" | "die";
+        export type EventType = "create" | "start" | "stop" | "die";
 
         export interface IDockerEvent {
             status: EventType; // create...

@@ -1,0 +1,29 @@
+{
+    "authors": "Elisée Maurer <https://github.com/elisee/>",
+    "definitionFilename": "index.d.ts",
+    "libraryDependencies": [
+        "node"
+    ],
+    "moduleDependencies": [
+        "fs"
+    ],
+    "libraryMajorVersion": "1",
+    "libraryMinorVersion": "2",
+    "libraryName": "recursive-readdir v1.2.1",
+    "typingsPackageName": "recursive-readdir",
+    "projectName": "https://github.com/jergason/recursive-readdir/",
+    "sourceRepoURL": "https://www.github.com/DefinitelyTyped/DefinitelyTyped",
+    "sourceBranch": "types-2.0",
+    "kind": "ProperModule",
+    "globals": [
+        "r"
+    ],
+    "declaredModules": [
+        "recursive-readdir"
+    ],
+    "files": [
+        "index.d.ts"
+    ],
+    "hasPackageJson": false,
+    "contentHash": "274a00d977b9d457ecb51a7cf52815a417d8e06703bf6be8a67ce77262ac087e"
+}
