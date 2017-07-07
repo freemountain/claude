@@ -245,6 +245,28 @@ export default class Application implements INameSpaceController {
 
         Object.assign(options.Labels, predefLabels);
 
+        this.logger.info(`Pulling image ${options.Image}`);
+
+        let info: any;
+        let isError: boolean = true;
+        try {
+            const img = this.docker.getImage(options.Image);
+            info = await img.inspect();
+            isError = false;
+        } catch (e) {
+            info = e;
+        } finally {
+            this.logger.info(`Pulling image ${options.Image} ${isError ? "failed" : "success"}`, info);
+        }
+
+
+        await new Promise((resolve, reject) => {
+            this.docker.pull(options.Image, {}, (err, stream) => {
+                this.docker.modem.followProgress(stream, () => resolve(), (e: any) => {
+                    this.logger.info(`Pulling ${options.Image}`, e);
+                });
+            });
+        })
         const getId = this.awaitContainer("create", cid);
         this.logger.info("create container", options);
 

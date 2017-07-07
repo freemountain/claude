@@ -108,7 +108,7 @@ export default class ProxyController implements IResourceController {
                     "80/tcp": [{ HostIP: "0.0.0.0", HostPort: "80" }],
                 },
             },
-            Image: "nginx",
+            Image: "library/nginx",
             Labels: {},
             Names: ["proxy"],
             Volumes: { "/etc/nginx": {} },

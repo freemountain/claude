@@ -539,6 +539,10 @@ osenv@^0.1.4:
     os-homedir "^1.0.0"
     os-tmpdir "^1.0.0"
 
+parallel@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/parallel/-/parallel-1.2.0.tgz#1917f1cb1a76269a4f059d55e1839e5fbff6c297"
+
 path-exists@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/path-exists/-/path-exists-3.0.0.tgz#ce0ebeaa5f78cb18925ea7d810d7b59b010fd515"
