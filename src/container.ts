@@ -9,7 +9,7 @@ import { ResourceControllerFactory } from "./models/controller";
 import { ILogger } from "./models/ILogger";
 import ProxyCtrl from "./resources/proxy/ProxyController";
 import StorageCtrl from "./resources/storage/StorageController";
-import RootLogger from "./RootLogger";
+import Logger from "./RootLogger";
 import sms = require("source-map-support");
 import Validator from "./Validator";
 
@@ -26,10 +26,10 @@ container.bind("main").toFactory(main);
 
 container.bind<interfaces.Factory<ILogger>>("getLogger").toFactory(() => (o: {} | string) => {
   if (typeof o === "string") {
-    return new RootLogger(o);
+    return new Logger(o);
   }
 
-  return new RootLogger(get(o, "name", o.constructor.name));
+  return new Logger(get(o, "name", o.constructor.name));
 });
 
 container.bind<interfaces.Factory<Docker>>("getDocker").toFactory<Docker>(() => () => {

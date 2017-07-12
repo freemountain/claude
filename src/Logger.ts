@@ -1,22 +1,13 @@
 import { injectable } from "inversify";
-import * as R from "ramda";
 import { Writable } from "stream";
+import { inspect } from "util";
+
 import IApplicationLogEvent from "./models/IApplicationLogEvent";
 import {ILogger} from "./models/ILogger";
 
-type EventHandler = (event: IApplicationLogEvent) => void;
-
-interface IConstructedObject {
-    constructor: {
-        name: string;
-    };
-}
 @injectable()
 export default class Logger implements ILogger {
-    constructor(
-        private handler: EventHandler,
-        private name: string,
-    ) { }
+    constructor(private name: string = "") {}
 
     public error(message: string, meta?: object) {
         this.handler({
@@ -66,13 +57,11 @@ export default class Logger implements ILogger {
             meta,
             source: this.name,
         });
-        const s = {};
-        this.getLogger(s);
     }
 
-    public getLogger(o: IConstructedObject | string): ILogger {
+    public getLogger(o: {} | string): ILogger {
         const name = typeof o === "string" ? o : o.constructor.name;
-        return new Logger(this.handler, name);
+        return new Logger(name);
     }
 
     public getLogStream(type: string, name: string): Writable {
@@ -90,5 +79,18 @@ export default class Logger implements ILogger {
             }
         };
         return writable;
+    }
+    private inspect(data: any): string {
+        try {
+            return JSON.stringify(data, null, "  ");
+        } catch (e) {
+            return inspect(data);
+        }
+    }
+
+    private handler(event: IApplicationLogEvent) {
+        process.stderr.write(
+            `[${event.levelName.toUpperCase()}] ${event.source}: ${event.message} (${this.inspect(event.meta)})\n`,
+        );
     }
 }
