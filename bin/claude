@@ -1,0 +1,4 @@
+#!/usr/bin/env node
+
+const container = require('../dist/container').default;
+container.get("main")();

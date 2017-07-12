@@ -1,34 +1,29 @@
-import * as Docker from "dockerode";
 import { copy, emptyDir, mkdirp, remove, writeFile } from "fs-extra";
+import { inject, injectable } from "inversify";
 import { join } from "path";
-import IDeployment from "./../../models/IDeployment";
-import IService from "./../../models/IService";
+import * as R from "ramda";
 
+import BaseController from "../../BaseController";
+import IDeployment from "./../../models/IDeployment";
 import IDockerRunOptions from "./../../models/IDockerRunOptions";
-import ILogger from "./../../models/ILogger";
-import { INameSpaceController } from "./../../models/INameSpaceController";
+import { ILogger, LoggerFactory } from "./../../models/ILogger";
 import { IResourceController, IResourceControllerArg } from "./../../models/IResourceController";
+import ISettings from "./../../models/ISettings";
 import { IValidatonError, IValidator } from "./../../models/IValidator";
+
 import IStorageDeploymentOptions from "./IStorageDeploymentOptions";
 import IStorageServiceOptions from "./IStorageServiceOptions";
 
-import DockerEvents = require("docker-events");
-
-import * as R from "ramda";
-
-export default class StorageController implements IResourceController {
-    public static create({ ctrl, validator }: IResourceControllerArg) {
-        return new StorageController(ctrl, validator);
-    }
-
+@injectable()
+export default class StorageController extends BaseController implements IResourceController {
     public name = "volumes";
-    private logger: ILogger;
 
     public constructor(
-        private ctrl: INameSpaceController,
-        private validator: IValidator,
+        @inject("Validator") private validator: IValidator,
+        @inject("getLogger") getLogger: LoggerFactory,
+        @inject("Settings") settings: ISettings,
     ) {
-        this.logger = ctrl.getLogger(this);
+        super(settings.namespace, getLogger(StorageController));
     }
 
     public async onAssertDeployment(name: string, deployment: IDeployment) {
@@ -39,7 +34,7 @@ export default class StorageController implements IResourceController {
         }
 
         await Promise.all(storage.volumes
-            .map((v) => this.ctrl.dataFile("volumes", name, v))
+            .map((v) => this.dataFile("volumes", name, v))
             .map((v) => mkdirp(v)));
     }
 
@@ -83,7 +78,8 @@ export default class StorageController implements IResourceController {
     }
 
     public async start() {
-        await mkdirp(this.ctrl.dataFile("volumes"));
+        this.logger.info("started");
+        await mkdirp(this.dataFile("volumes"));
     }
 
     public onCreateContainerConfig(
@@ -94,7 +90,7 @@ export default class StorageController implements IResourceController {
     ): Promise<IDockerRunOptions> {
         const container = deployment.services[containerName];
         const storage: IStorageServiceOptions = container.resources.storage;
-        const getHostPath = (name: string) => this.ctrl.dataFile("volumes", deploymenName, name);
+        const getHostPath = (name: string) => this.dataFile("volumes", deploymenName, name);
         if (!storage) {
             return Promise.resolve(config);
         }
@@ -115,9 +111,5 @@ export default class StorageController implements IResourceController {
         Object.assign(config.Volumes, volumes);
 
         return Promise.resolve(config);
-    }
-
-    private async handler(containers: Docker.ContainerInspectInfo[]) {
-        //
     }
 }

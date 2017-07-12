@@ -13,29 +13,31 @@
   "devDependencies": {
     "@types/ajv": "^1.0.0",
     "@types/dockerode": "^2.4.1",
+    "@types/event-stream": "^3.3.31",
     "@types/fs-extra": "^3.0.3",
     "@types/lodash": "^4.14.66",
     "@types/ramda": "^0.24.0",
+    "@types/recursive-readdir": "^1.2.28",
     "@types/source-map-support": "^0.4.0",
     "@types/uuid": "^3.0.0",
+    "parallel": "^1.2.0",
     "tslint": "^5.4.3",
-    "typescript": "^2.3.4"
+    "typescript": "^2.3.4",
+    "typhen": "^1.2.8",
+    "typhen-json-schema": "^0.5.0"
   },
   "dependencies": {
-    "@types/event-stream": "^3.3.31",
-    "@types/recursive-readdir": "^1.2.28",
+    "@types/inversify": "^2.0.33",
     "ajv": "^5.2.0",
-    "docker-events": "^0.0.2",
     "dockerode": "^2.5.0",
     "event-stream": "^3.3.4",
     "fs-extra": "^3.0.1",
+    "inversify": "^4.2.0",
     "lodash": "^4.17.4",
-    "parallel": "^1.2.0",
     "ramda": "^0.24.1",
     "recursive-readdir": "^2.2.1",
+    "reflect-metadata": "^0.1.10",
     "source-map-support": "^0.4.15",
-    "typhen": "^1.2.8",
-    "typhen-json-schema": "^0.5.0",
     "uuid": "^3.1.0"
   }
 }

@@ -1,17 +1,16 @@
 import * as Docker from "dockerode";
-import { copy, emptyDir, mkdirp, remove, writeFile } from "fs-extra";
+import { copy, remove, writeFile } from "fs-extra";
+import { inject, injectable } from "inversify";
+import BaseController from "../../BaseController";
+import { IContainerController } from "./../../models/IContainerController";
 import IDeployment from "./../../models/IDeployment";
 import IDockerRunOptions from "./../../models/IDockerRunOptions";
-import ILogger from "./../../models/ILogger";
-import { INameSpaceController } from "./../../models/INameSpaceController";
+import {ILogger, LoggerFactory} from "./../../models/ILogger";
 import { IResourceController, IResourceControllerArg } from "./../../models/IResourceController";
+import ISettings from "./../../models/ISettings";
 import { IValidatonError, IValidator } from "./../../models/IValidator";
 
 import IProxyDeploymentOptions from "./IProxyDeploymentOptions";
-
-import DockerEvents = require("docker-events");
-
-import * as R from "ramda";
 
 const configTemplate = (container: Docker.ContainerInspectInfo) => {
     const ip = container.NetworkSettings.IPAddress;
@@ -34,23 +33,21 @@ server {
 `;
 };
 
-export default class ProxyController implements IResourceController {
-    public static create({ ctrl, validator }: IResourceControllerArg) {
-        return new ProxyController(ctrl, validator);
-    }
-
+@injectable()
+export default class ProxyController extends BaseController implements IResourceController {
     public name = "proxy";
-    private container: Docker.Container;
-    private logger: ILogger;
     private started: boolean;
     private usedDomains: Set<string>;
+    private proxyContainer: Docker.Container;
 
     public constructor(
-        private ctrl: INameSpaceController,
-        private validator: IValidator,
+        @inject("ContainerController") private container: IContainerController,
+        @inject("Validator") private validator: IValidator,
+        @inject("getLogger") getLogger: LoggerFactory,
+        @inject("Settings") settings: ISettings,
     ) {
-        this.logger = ctrl.getLogger(this);
-        this.ctrl.onContainerChange((c) => this.handler(c));
+        super(settings.namespace, getLogger(ProxyController));
+        this.container.onContainerChange((c) => this.handler(c));
         this.started = false;
     }
 
@@ -89,13 +86,13 @@ export default class ProxyController implements IResourceController {
     }
 
     public async start() {
-        const etcVolume = this.ctrl.dataFile("volumes", "proxy-etc");
-        await copy(this.ctrl.applicationFile("config", "nginx"), etcVolume);
+        const etcVolume = this.dataFile("volumes", "proxy-etc");
+        await copy(this.applicationFile("config", "nginx"), etcVolume);
         const mounts: R.Dictionary<string> = {};
         mounts[etcVolume] = "/etc/nginx";
 
         this.usedDomains = new Set();
-        this.container = await this.ctrl.run({
+        this.proxyContainer = await this.container.assertStarted({
             Cmd: [],
             Env: [],
             ExposedPorts: {
@@ -108,7 +105,7 @@ export default class ProxyController implements IResourceController {
                     "80/tcp": [{ HostIP: "0.0.0.0", HostPort: "80" }],
                 },
             },
-            Image: "library/nginx",
+            Image: "library/nginx:stable-alpine",
             Labels: {},
             Names: ["proxy"],
             Volumes: { "/etc/nginx": {} },
@@ -142,10 +139,10 @@ export default class ProxyController implements IResourceController {
         this.logger.info(`create proxy routes of ${upstream.length} containers`);
 
         const config = upstream.map((configTemplate)).join("\n");
-        const dest = this.ctrl.dataFile("volumes", "proxy-etc", "conf.d", "proxy.conf");
+        const dest = this.dataFile("volumes", "proxy-etc", "conf.d", "proxy.conf");
         await remove(dest).catch(() => null);
         await writeFile(dest, config);
         this.logger.info(`reloading...`);
-        await this.container.kill({ signal: "SIGHUP" });
+        await this.proxyContainer.kill({ signal: "SIGHUP" });
     }
 }

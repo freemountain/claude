@@ -6,4 +6,4 @@ ADD yarn.lock yarn.lock
 RUN yarn install --prod
 ADD . .
 EXPOSE 3000
-CMD ["node", "dist/index.js"]
+CMD ["node", "bin/claude"]

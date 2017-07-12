@@ -1,6 +1,8 @@
+import { injectable } from "inversify";
 import * as R from "ramda";
+import { Writable } from "stream";
 import IApplicationLogEvent from "./models/IApplicationLogEvent";
-import ILogger from "./models/ILogger";
+import {ILogger} from "./models/ILogger";
 
 type EventHandler = (event: IApplicationLogEvent) => void;
 
@@ -9,15 +11,13 @@ interface IConstructedObject {
         name: string;
     };
 }
-
+@injectable()
 export default class Logger implements ILogger {
-
     constructor(
         private handler: EventHandler,
         private name: string,
-    ) {
+    ) { }
 
-    }
     public error(message: string, meta?: object) {
         this.handler({
             level: 0,
@@ -69,8 +69,26 @@ export default class Logger implements ILogger {
         const s = {};
         this.getLogger(s);
     }
+
     public getLogger(o: IConstructedObject | string): ILogger {
         const name = typeof o === "string" ? o : o.constructor.name;
         return new Logger(this.handler, name);
+    }
+
+    public getLogStream(type: string, name: string): Writable {
+        let buffer = "";
+        const writable = new Writable();
+
+        writable._write = (chunk, encoding, done) => {
+            const current: string = chunk.toString();
+            for (const char of current) {
+                buffer += char;
+                if (char === "\n") {
+                    process.stdout.write(`[${type.toUpperCase()}] ${name}: ${buffer}`);
+                    buffer = "";
+                }
+            }
+        };
+        return writable;
     }
 }

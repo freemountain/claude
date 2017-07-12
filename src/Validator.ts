@@ -1,9 +1,11 @@
 import * as Ajv from "ajv";
 import { readdir, readJSON, stat } from "fs-extra";
+import { injectable } from "inversify";
 import { join } from "path";
 import { flatten, lens } from "ramda";
 import { IValidatonError, IValidator } from "./models/IValidator";
 
+@injectable()
 export default class Validator implements IValidator {
     private ajv: Ajv.Ajv;
 

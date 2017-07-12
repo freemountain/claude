@@ -1,12 +1,15 @@
+import { IContainerController } from "./IContainerController";
 import IDeployment from "./IDeployment";
 import IDockerRunOptions from "./IDockerRunOptions";
 import IFactory from "./IFactory";
-import { INameSpaceController } from "./INamespaceController";
+import {ILogger} from "./ILogger";
 import { IValidatonError, IValidator } from "./IValidator";
 
 export interface IResourceControllerArg {
-    ctrl: INameSpaceController;
+    container: IContainerController;
     validator: IValidator;
+    logger: ILogger;
+    namespace: string;
 }
 
 export type ResourceControllerFactory = IFactory<IResourceController, IResourceControllerArg>;
@@ -23,5 +26,5 @@ export interface IResourceController {
         deploymenName: string,
         containerName: string,
         config: IDockerRunOptions,
-        ): Promise<IDockerRunOptions>;
+    ): Promise<IDockerRunOptions>;
 }

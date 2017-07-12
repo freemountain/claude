@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "es6",
+    "lib": [
+      "es6"
+    ],
     "module": "commonjs",
+    "moduleResolution": "node",
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
@@ -12,12 +16,15 @@
     "alwaysStrict": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "typeRoots": [
       "./definitions",
       "./node_modules/@types"
     ],
     "types": [
-      "node"
+      "node",
+      "reflect-metadata"
       //"recursive-readdir"
     ]
   }
