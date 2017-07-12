@@ -4,10 +4,10 @@ import { join } from "path";
 import * as R from "ramda";
 
 import BaseController from "../../BaseController";
+import { IResourceController, IResourceControllerArg } from "./../../models/controller";
+import { IDockerRunOptions } from "./../../models/docker";
 import IDeployment from "./../../models/IDeployment";
-import IDockerRunOptions from "./../../models/IDockerRunOptions";
 import { ILogger, LoggerFactory } from "./../../models/ILogger";
-import { IResourceController, IResourceControllerArg } from "./../../models/IResourceController";
 import ISettings from "./../../models/ISettings";
 import { IValidatonError, IValidator } from "./../../models/IValidator";
 

@@ -6,9 +6,8 @@ import * as R from "ramda";
 import * as stream from "stream";
 import { v4 } from "uuid";
 
-import { ContainerFilter, ContainerHandler, IContainerController } from "./models/IContainerController";
-import { EventType, IDockerEvent } from "./models/IDockerEvent";
-import IDockerRunOptions from "./models/IDockerRunOptions";
+import { ContainerFilter, ContainerHandler, IContainerController } from "./models/controller";
+import { DockerEventType, IDockerEvent, IDockerRunOptions } from "./models/docker";
 import { ILogger, LoggerFactory } from "./models/ILogger";
 import ISettings from "./models/ISettings";
 import { createLabelFilter, Labels, parseRepository } from "./utils";
@@ -85,7 +84,7 @@ export default class ContainerController implements IContainerController {
         this.onChangeHandler = this.onChangeHandler.filter(({ handler }) => h !== handler);
     }
 
-    public awaitContainerEvent(eventType: EventType, labels: Labels): Promise<IDockerEvent> {
+    public awaitContainerEvent(eventType: DockerEventType, labels: Labels): Promise<IDockerEvent> {
         return new Promise((resolve, reject) => {
             const handler = (container: any, event: IDockerEvent) => {
                 this.removeHandler(handler);

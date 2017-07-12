@@ -1,4 +1,4 @@
-import IDeployment from "./IDeployment";
+import IDeployment from "../IDeployment";
 
 export interface IDeploymentController {
     start(): Promise<void>;

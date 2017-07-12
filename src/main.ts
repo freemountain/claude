@@ -1,6 +1,6 @@
 
 import { Container, injectable, interfaces } from "inversify";
-import IDeploymentController from "./models/IDeploymentController";
+import { IDeploymentController } from "./models/controller";
 import { LoggerFactory } from "./models/ILogger";
 import ISettings from "./models/ISettings";
 

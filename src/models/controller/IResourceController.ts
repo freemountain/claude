@@ -1,9 +1,11 @@
+import { IDockerRunOptions } from "../docker";
 import { IContainerController } from "./IContainerController";
-import IDeployment from "./IDeployment";
-import IDockerRunOptions from "./IDockerRunOptions";
-import IFactory from "./IFactory";
-import {ILogger} from "./ILogger";
-import { IValidatonError, IValidator } from "./IValidator";
+
+import IDeployment from "../IDeployment";
+
+import IFactory from "../IFactory";
+import {ILogger} from "../ILogger";
+import { IValidatonError, IValidator } from "../IValidator";
 
 export interface IResourceControllerArg {
     container: IContainerController;

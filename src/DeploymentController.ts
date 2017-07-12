@@ -12,19 +12,20 @@ import {
 import { join } from "path";
 import * as R from "ramda";
 import { v4 } from "uuid";
-import { IContainerController } from "./models/IContainerController";
+import {
+    IContainerController,
+    IDeploymentController,
+    IResourceController,
+    ResourceControllerFactory,
+} from "./models/controller";
+import { IDockerNetworkInfo, IDockerRunOptions } from "./models/docker";
 import IDeployment from "./models/IDeployment";
-import IDeploymentController from "./models/IDeploymentController";
-import IDockerRunOptions from "./models/IDockerRunOptions";
 import { ILogger, LoggerFactory } from "./models/ILogger";
-import { IResourceController, ResourceControllerFactory } from "./models/IResourceController";
 import IService from "./models/IService";
 import ISettings from "./models/ISettings";
 import { IValidatonError } from "./models/IValidator";
 
 import Validator from "./Validator";
-
-import IDockerNetworkInfo from "./models/IDockerNetworkInfo";
 
 import ContainerController from "./ContainerController";
 
