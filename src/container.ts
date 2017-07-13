@@ -4,12 +4,12 @@ import { get } from "lodash";
 import "reflect-metadata";
 import ContainerController from "./ContainerController";
 import DeploymentController from "./DeploymentController";
+import Logger from "./Logger";
 import main from "./main";
 import { ResourceControllerFactory } from "./models/controller";
 import { ILogger } from "./models/ILogger";
 import ProxyCtrl from "./resources/proxy/ProxyController";
 import StorageCtrl from "./resources/storage/StorageController";
-import Logger from "./RootLogger";
 import sms = require("source-map-support");
 import Validator from "./Validator";
 

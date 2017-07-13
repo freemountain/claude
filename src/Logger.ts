@@ -3,7 +3,7 @@ import { Writable } from "stream";
 import { inspect } from "util";
 
 import IApplicationLogEvent from "./models/IApplicationLogEvent";
-import {ILogger} from "./models/ILogger";
+import { ILogger } from "./models/ILogger";
 
 @injectable()
 export default class Logger implements ILogger {
