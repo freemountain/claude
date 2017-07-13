@@ -46,7 +46,6 @@ export default class ContainerController implements IContainerController {
     }
 
     public async start() {
-        this.logger.info("start");
         const actions = ["create", "start", "stop", "die"];
         const rawDockerEvents = await this.docker.getEvents();
         const labelFilter = createLabelFilter({
@@ -105,10 +104,11 @@ export default class ContainerController implements IContainerController {
         Object.assign(options.Labels, predefLabels);
         await this.assertImage(options.Image);
 
+        const name = options.Names[0];
         const getId = this.awaitContainerEvent("create", { cid });
-        this.logger.info("create container", options);
+        this.logger.info(`create container ${name}`, options);
 
-        this.docker.run(options.Image, options.Cmd, this.logger.getLogStream("container", "some cont"), options);
+        this.docker.run(options.Image, options.Cmd, this.logger.getLogStream("container", name), options);
 
         const { id } = await getId;
         return this.docker.getContainer(id);
@@ -122,14 +122,13 @@ export default class ContainerController implements IContainerController {
             const container = this.docker.getContainer(containerInfo.Id);
             const cid = containerInfo.Labels["claude.cid"];
             const name = containerInfo.Names[0].slice(1);
-            this.logger.info(`removing container ${name}`, containerInfo.Labels);
+            this.logger.info(`removing container ${name}`);
             const finished = this.awaitContainerEvent("die", { cid });
             container
                 .remove({ force: true })
                 .catch((e) => this.logger.warn(`proplems removing container ${name}`, e));
 
             await finished;
-            this.logger.info(`removed container ${name}`);
         }));
     }
 
@@ -160,11 +159,10 @@ export default class ContainerController implements IContainerController {
             return;
         }
 
+        this.logger.info(`Pulling ${repository}:${tag}`);
         await new Promise((resolve, reject) => {
             this.docker.pull(`${repository}:${tag}`, {}, (err, stream) => {
-                this.docker.modem.followProgress(stream, () => resolve(), (e: any) => {
-                    this.logger.info(`Pulling ${repository}:${tag}`, e);
-                });
+                this.docker.modem.followProgress(stream, () => resolve());
             });
         });
     }

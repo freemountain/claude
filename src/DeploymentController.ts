@@ -64,10 +64,7 @@ export default class DeploymentController implements IDeploymentController {
 
         await mkdirp("/var/claude/etc-volumes");
         await mkdirp("/var/claude/gen-volumes");
-        this.logger.info("start network");
         const network = await this.assertNetwork(this.namespace);
-
-        this.logger.info("start ctrl", this.resourceControllers.map((c) => c.name));
 
         await Promise.all(this.resourceControllers.map((ctrl) => ctrl.start()));
     }
@@ -137,7 +134,6 @@ export default class DeploymentController implements IDeploymentController {
                 Name: `claude-${name}`,
             });
             network = (await this.docker.listNetworks()).filter(({ Labels }) => filter(Labels))[0];
-            this.logger.info(`created network ${name}`, network);
         }
 
         if (!network) {
