@@ -89,8 +89,9 @@ export default class Logger implements ILogger {
     }
 
     private handler(event: IApplicationLogEvent) {
+        const meta = event.meta ? ` (${this.inspect(event.meta)})` : "";
         process.stderr.write(
-            `[${event.levelName.toUpperCase()}] ${event.source}: ${event.message} (${this.inspect(event.meta)})\n`,
+            `[${event.levelName.toUpperCase()}] ${event.source}: ${event.message}${meta}\n`,
         );
     }
 }
