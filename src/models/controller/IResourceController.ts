@@ -4,8 +4,8 @@ import { IContainerController } from "./IContainerController";
 import IDeployment from "../IDeployment";
 
 import IFactory from "../IFactory";
-import {ILogger} from "../ILogger";
 import { IValidatonError, IValidator } from "../IValidator";
+import { ILogger } from "../logging";
 
 export interface IResourceControllerArg {
     container: IContainerController;

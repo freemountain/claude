@@ -1,5 +1,7 @@
 import { fromPairs } from "lodash";
 import * as R from "ramda";
+import * as util from "util";
+import { parse, split } from "./streams";
 
 import parseRepository from "./parseRepository";
 
@@ -38,9 +40,19 @@ const createLabelFilter = (...expectedLabels: Labels[]) => {
     )(reduced);
 };
 
+const inspect = (data: any): string => {
+    try {
+        return JSON.stringify(data, null, "  ");
+    } catch (e) {
+        return util.inspect(data);
+    }
+};
+
 export {
     createLabels,
     createLabelFilter,
     Labels,
     parseRepository,
+    inspect,
+    parse, split,
 };

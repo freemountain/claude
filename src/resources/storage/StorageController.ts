@@ -7,9 +7,9 @@ import BaseController from "../../BaseController";
 import { IResourceController, IResourceControllerArg } from "./../../models/controller";
 import { IDockerRunOptions } from "./../../models/docker";
 import IDeployment from "./../../models/IDeployment";
-import { ILogger, LoggerFactory } from "./../../models/ILogger";
 import ISettings from "./../../models/ISettings";
 import { IValidatonError, IValidator } from "./../../models/IValidator";
+import { ILogger, LoggerFactory } from "./../../models/logging";
 
 import IStorageDeploymentOptions from "./IStorageDeploymentOptions";
 import IStorageServiceOptions from "./IStorageServiceOptions";

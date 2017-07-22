@@ -2,16 +2,20 @@ import * as Docker from "dockerode";
 import { Container, injectable, interfaces } from "inversify";
 import { get } from "lodash";
 import "reflect-metadata";
+import { PassThrough } from "stream";
 import ContainerController from "./ContainerController";
 import DeploymentController from "./DeploymentController";
-import Logger from "./Logger";
+import { createLogger, createLogStream, UDPClient } from "./logging";
 import main from "./main";
 import { ResourceControllerFactory } from "./models/controller";
-import { ILogger } from "./models/ILogger";
-import ProxyCtrl from "./resources/proxy/ProxyController";
-import StorageCtrl from "./resources/storage/StorageController";
+import { ILogger } from "./models/logging";
+
 import sms = require("source-map-support");
 import Validator from "./Validator";
+
+import LoggingController from "./resources/logging/LoggingController";
+import ProxyController from "./resources/proxy/ProxyController";
+import StorageController from "./resources/storage/StorageController";
 
 sms.install();
 
@@ -20,17 +24,14 @@ const container = new Container();
 container.bind("Validator").to(Validator).inSingletonScope();
 container.bind("ContainerController").to(ContainerController).inSingletonScope();
 container.bind("DeploymentController").to(DeploymentController).inSingletonScope();
-container.bind("ProxyCtrl").to(ProxyCtrl);
-container.bind("StorageCtrl").to(StorageCtrl);
+container.bind("ProxyController").to(ProxyController);
+container.bind("StorageController").to(StorageController);
+container.bind("LoggingController").to(LoggingController);
 container.bind("main").toFactory(main);
 
-container.bind<interfaces.Factory<ILogger>>("getLogger").toFactory(() => (o: {} | string) => {
-  if (typeof o === "string") {
-    return new Logger(o);
-  }
-
-  return new Logger(get(o, "name", o.constructor.name));
-});
+container.bind("UDPClient").to(UDPClient).inSingletonScope();
+container.bind<interfaces.Factory<ILogger>>("getLogger").toFactory(createLogger);
+container.bind<interfaces.Factory<ILogger>>("getLogStream").toFactory(createLogStream);
 
 container.bind<interfaces.Factory<Docker>>("getDocker").toFactory<Docker>(() => () => {
   return new Docker();
@@ -39,8 +40,9 @@ container.bind<interfaces.Factory<Docker>>("getDocker").toFactory<Docker>(() => 
 container.bind<interfaces.Factory<ResourceControllerFactory[]>>("getResourceController")
   .toFactory((context: interfaces.Context) => () => {
     return [
-      context.container.get("ProxyCtrl"),
-      context.container.get("StorageCtrl"),
+      context.container.get("LoggingController"),
+      context.container.get("ProxyController"),
+      context.container.get("StorageController"),
     ];
   });
 

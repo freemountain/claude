@@ -20,10 +20,10 @@ import {
 } from "./models/controller";
 import { IDockerNetworkInfo, IDockerRunOptions } from "./models/docker";
 import IDeployment from "./models/IDeployment";
-import { ILogger, LoggerFactory } from "./models/ILogger";
 import IService from "./models/IService";
 import ISettings from "./models/ISettings";
 import { IValidatonError } from "./models/IValidator";
+import { ILogger, LoggerFactory } from "./models/logging";
 
 import Validator from "./Validator";
 
@@ -103,7 +103,10 @@ export default class DeploymentController implements IDeploymentController {
                     PortBindings: {},
                 },
                 Image: service.image,
-                Labels: {},
+                Labels: {
+                    "claude.deployment": name,
+                    "claude.service": serviceName,
+                },
                 Names: [serviceName],
                 Volumes: {},
             };

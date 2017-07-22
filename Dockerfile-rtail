@@ -1,0 +1,8 @@
+FROM mhart/alpine-node:8
+
+WORKDIR /app
+RUN yarn add rtail
+EXPOSE 8888
+EXPOSE 9999
+
+CMD ["node", "./node_modules/.bin/rtail-server", "--uh", "0.0.0.0", "--wh", "0.0.0.0"]

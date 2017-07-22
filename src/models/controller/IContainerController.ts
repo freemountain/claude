@@ -1,7 +1,7 @@
 import * as Docker from "dockerode";
 import { Labels } from "../../utils";
 import { IDockerEvent, IDockerRunOptions } from "../docker";
-import { ILogger } from "../ILogger";
+import { ILogger } from "../logging";
 
 export type ContainerHandler = (container: Docker.ContainerInspectInfo[], event: IDockerEvent) => Promise<void> | void;
 export type ContainerFilter = (event: IDockerEvent) => boolean;

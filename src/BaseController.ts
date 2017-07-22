@@ -1,16 +1,13 @@
 import { injectable } from "inversify";
 import { join } from "path";
-import { ILogger } from "./models/ILogger";
+import { ILogger } from "./models/logging";
 
 @injectable()
 export default class BaseController {
-    protected logger: ILogger;
-
     constructor(
         protected namespace: string,
-        logger: ILogger,
+        protected logger: ILogger,
     ) {
-        this.logger = logger.getLogger(this);
     }
 
     protected applicationFile(...name: string[]) {

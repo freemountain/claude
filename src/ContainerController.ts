@@ -1,16 +1,16 @@
 import * as Docker from "dockerode";
-import * as es from "event-stream";
 import { inject, injectable, interfaces } from "inversify";
 import { get } from "lodash";
 import * as R from "ramda";
 import * as stream from "stream";
+import * as through from "through2";
 import { v4 } from "uuid";
 
 import { ContainerFilter, ContainerHandler, IContainerController } from "./models/controller";
 import { DockerEventType, IDockerEvent, IDockerRunOptions } from "./models/docker";
-import { ILogger, LoggerFactory } from "./models/ILogger";
 import ISettings from "./models/ISettings";
-import { createLabelFilter, Labels, parseRepository } from "./utils";
+import { ILogger, LoggerFactory, LogStreamFactory } from "./models/logging";
+import { createLabelFilter, Labels, parse, parseRepository, split } from "./utils";
 
 type Handler = (error?: any, data?: any) => void;
 type ContainerHandlers = Array<{ handler: ContainerHandler, filter: ContainerFilter }>;
@@ -26,13 +26,14 @@ export default class ContainerController implements IContainerController {
         @inject("getDocker") getDocker: interfaces.Factory<Docker>,
         @inject("getLogger") getLogger: LoggerFactory,
         @inject("Settings") private settings: ISettings,
+        @inject("getLogStream") private getLogStream: LogStreamFactory,
     ) {
         this.docker = getDocker() as Docker;
         this.logger = getLogger(this);
         this.onChangeHandler = [];
         this.events = new stream.PassThrough({ objectMode: true });
 
-        this.events.pipe(es.map(async (event: IDockerEvent, cb: Handler) => {
+        this.events.pipe(through.obj(async (event: IDockerEvent, _, cb) => {
             const { Action, id } = event;
             const handlers = this.onChangeHandler.filter(({ filter }) => filter(event));
             if (handlers.length === 0) {
@@ -53,9 +54,9 @@ export default class ContainerController implements IContainerController {
         });
 
         rawDockerEvents
-            .pipe(es.split("\n"))
-            .pipe(es.map((data: string, cb: Handler) => cb(null, JSON.parse(data))))
-            .pipe(es.map((data: IDockerEvent, cb: Handler) => {
+            .pipe(split())
+            .pipe(parse())
+            .pipe(through.obj((data: IDockerEvent, _, cb) => {
                 const result = data.Type === "container"
                     && actions.indexOf(data.Action) !== -1
                     && labelFilter(data.Actor.Attributes);
@@ -104,11 +105,14 @@ export default class ContainerController implements IContainerController {
         Object.assign(options.Labels, predefLabels);
         await this.assertImage(options.Image);
 
-        const name = options.Names[0];
+        const name = options.Labels["claude.deployment"] && options.Labels["claude.service"]
+            ? `${options.Labels["claude.deployment"]}-${options.Labels["claude.service"]}`
+            : options.Names[0];
+
         const getId = this.awaitContainerEvent("create", { cid });
         this.logger.info(`create container ${name}`, options);
 
-        this.docker.run(options.Image, options.Cmd, this.logger.getLogStream("container", name), options);
+        this.docker.run(options.Image, options.Cmd, this.getLogStream(name), options);
 
         const { id } = await getId;
         return this.docker.getContainer(id);

@@ -1,8 +1,7 @@
-
 import { Container, injectable, interfaces } from "inversify";
 import { IDeploymentController } from "./models/controller";
-import { LoggerFactory } from "./models/ILogger";
 import ISettings from "./models/ISettings";
+import { LoggerFactory } from "./models/logging";
 
 @injectable()
 class Setings implements ISettings {
@@ -17,14 +16,14 @@ const main = (context: interfaces.Context) => async () => {
 
     process.on("SIGINT", () => process.exit());
     process.on("unhandledRejection", (error) => {
-        logger.error(`unhandledRejection: ${error.message} ${error.stack}`);
+        console.error(`unhandledRejection: ${error.message} ${error.stack}`);
         process.exit(-1);
     });
 
-    const deployment = container.get<IDeploymentController>("DeploymentController");
+    const deployment: IDeploymentController = container.get<IDeploymentController>("DeploymentController");
     await deployment.start();
 
-    deployment.assertDeployment("hello-foo", {
+    await deployment.assertDeployment("hello-foo", {
         resources: {
             proxy: {
                 domain: "foo.claude.dev",
