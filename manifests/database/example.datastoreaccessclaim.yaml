@@ -1,0 +1,12 @@
+
+
+apiVersion: instana.com/v1alpha1
+kind: DataStoreAccessClaim
+metadata:
+  name: example
+spec:
+  roles: ["ALL"]
+  dataStoreSelector:
+    matchName: "example"
+  secretSelector:
+    matchNames: ["both-user"]

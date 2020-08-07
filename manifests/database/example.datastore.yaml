@@ -1,0 +1,8 @@
+
+
+apiVersion: instana.com/v1alpha1
+kind: DataStore
+metadata:
+  name: example
+spec:
+  type: mysql
