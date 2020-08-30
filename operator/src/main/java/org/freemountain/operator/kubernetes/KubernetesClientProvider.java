@@ -19,7 +19,7 @@ public class KubernetesClientProvider {
     @Produces
     @Singleton
     @Named("namespace")
-    private String findNamespace() throws IOException {
+    String findNamespace() throws IOException {
         return new String(Files.readAllBytes(Paths.get("/var/run/secrets/kubernetes.io/serviceaccount/namespace")));
     }
 

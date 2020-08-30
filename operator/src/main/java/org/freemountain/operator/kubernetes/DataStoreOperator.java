@@ -1,29 +1,27 @@
 package org.freemountain.operator.kubernetes;
 
 import io.fabric8.kubernetes.client.Watcher;
-import io.quarkus.runtime.StartupEvent;
-import org.freemountain.operator.MySqlClient;
-import org.freemountain.operator.MySqlQueryGenerator;
 import org.freemountain.operator.kubernetes.caches.DataStoreResourceCache;
 import org.freemountain.operator.kubernetes.resources.DataStoreResource;
 import org.jboss.logging.Logger;
 
-import javax.enterprise.event.Observes;
+import javax.annotation.PostConstruct;
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.sql.SQLException;
 
+@ApplicationScoped
 public class DataStoreOperator {
     private static final Logger LOGGER = Logger.getLogger(DataStoreOperator.class);
 
-    MySqlQueryGenerator queryGenerator = new MySqlQueryGenerator();
 
     @Inject
-    private DataStoreResourceCache cache;
+    DataStoreResourceCache cache;
 
     @Inject
-    private MySqlClient dbClient;
+    JobService jobService;
 
-    void runWatch() {
+    public void runWatch() {
         new Thread(() -> cache.listThenWatch(this::handleEvent)).start();
     }
 
@@ -43,9 +41,10 @@ public class DataStoreOperator {
     private void onDatabase(Watcher.Action action, DataStoreResource db) throws SQLException {
         String dbName = db.getMetadata().getName();
         LOGGER.infof("%s %s %s", action, dbName, db.getSpec());
-
+        jobService.startJob("test", dbName);
+  /*
         dbClient.execute(queryGenerator.createDatabaseIfNotExists(dbName));
-        /*
+
         Map<String, DatabaseUser.Role> roles = collectRoles(db.getSpec());
         Map<String, Optional<Secret>> allSecrets = collectSecrets(db.getSpec());
 

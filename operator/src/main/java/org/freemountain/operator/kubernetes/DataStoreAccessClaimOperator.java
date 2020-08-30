@@ -1,24 +1,7 @@
 package org.freemountain.operator.kubernetes;
 
-import io.fabric8.kubernetes.api.model.DoneableSecret;
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.Watcher;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.quarkus.runtime.StartupEvent;
-import org.freemountain.operator.MySqlClient;
-import org.freemountain.operator.MySqlQueryGenerator;
-import org.freemountain.operator.kubernetes.caches.DataStoreAccessClaimResourceCache;
-import org.freemountain.operator.kubernetes.resources.DataStoreAccessClaimResource;
-import org.jboss.logging.Logger;
-
-import javax.enterprise.event.Observes;
-import javax.inject.Inject;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.stream.Collectors;
-
 public class DataStoreAccessClaimOperator {
+    /*
     private static final Logger LOGGER = Logger.getLogger(DataStoreAccessClaimOperator.class);
     @Inject
     protected DataStoreAccessClaimResourceCache claimCache;
@@ -85,4 +68,6 @@ public class DataStoreAccessClaimOperator {
         String value = data.get(key);
         return value == null ? null : new String(Base64.getDecoder().decode(value));
     }
+
+     */
 }

@@ -14,15 +14,6 @@ spec:
     spec:
       serviceAccountName: operator-example
       containers:
-      - image: k3s/a-operator
+      - image: registry:5000/claude/operator-jvm
         name: operator
-        imagePullPolicy: IfNotPresent
-        env:
-        - name: MYSQL_USER
-          value: root
-        - name: MYSQL_PASSWORD
-          value: password
-        - name: MYSQL_HOST
-          value: mysql
-        - name: MYSQL_PORT
-          value: "3306"
+        imagePullPolicy: Always
