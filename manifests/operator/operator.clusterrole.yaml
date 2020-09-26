@@ -18,9 +18,8 @@ rules:
   - instana.com
   resources:
   - datastores
-  verbs:
-  - list
-  - watch
+  - datastores/status
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "put"]
 - apiGroups:
   - instana.com
   resources:

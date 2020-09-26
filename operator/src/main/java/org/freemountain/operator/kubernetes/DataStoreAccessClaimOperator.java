@@ -1,6 +1,21 @@
 package org.freemountain.operator.kubernetes;
 
+import org.eclipse.microprofile.reactive.messaging.Incoming;
+import org.freemountain.operator.events.DataStoreAccessClaimLifecycleEvent;
+import org.freemountain.operator.events.DataStoreLifecycleEvent;
+import org.jboss.logging.Logger;
+
+import javax.enterprise.context.ApplicationScoped;
+
+@ApplicationScoped
 public class DataStoreAccessClaimOperator {
+    private static final Logger LOGGER = Logger.getLogger(DataStoreAccessClaimOperator.class);
+
+    @Incoming(DataStoreAccessClaimLifecycleEvent.ADDRESS)
+    void onEvent(DataStoreAccessClaimLifecycleEvent event) {
+        LOGGER.infof("Got %s %s", event.getType(), event.getResources());
+    }
+
     /*
     private static final Logger LOGGER = Logger.getLogger(DataStoreAccessClaimOperator.class);
     @Inject

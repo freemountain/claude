@@ -1,26 +1,73 @@
 package org.freemountain.operator.kubernetes;
 
-import io.fabric8.kubernetes.client.Watcher;
-import org.freemountain.operator.kubernetes.caches.DataStoreResourceCache;
-import org.freemountain.operator.kubernetes.resources.DataStoreResource;
+import io.fabric8.kubernetes.api.model.batch.Job;
+import org.eclipse.microprofile.reactive.messaging.Incoming;
+import org.freemountain.operator.ResourceStatusUpdateService;
+import org.freemountain.operator.events.DataStoreLifecycleEvent;
+import org.freemountain.operator.common.LifecycleType;
+import org.freemountain.operator.kubernetes.jobs.JobService;
+import org.freemountain.operator.kubernetes.jobs.JobWatcher;
+import org.freemountain.operator.crds.DataStoreResource;
+import org.freemountain.operator.dtos.DataStoreStatus;
+import org.freemountain.operator.templates.DataStoreJobTemplate;
+import org.freemountain.operator.templates.JobTemplateService;
 import org.jboss.logging.Logger;
 
-import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.sql.SQLException;
+import java.util.Optional;
 
 @ApplicationScoped
 public class DataStoreOperator {
     private static final Logger LOGGER = Logger.getLogger(DataStoreOperator.class);
 
-
-    @Inject
-    DataStoreResourceCache cache;
-
     @Inject
     JobService jobService;
 
+    @Inject
+    JobTemplateService jobTemplateService;
+
+    @Inject
+    ResourceStatusUpdateService statusUpdateService;
+
+
+    @Incoming(DataStoreLifecycleEvent.ADDRESS)
+    void onEvent(DataStoreLifecycleEvent event) {
+        if(event.getType().equals(LifecycleType.ADDED)) {
+            for(DataStoreResource resource : event.getResources()) {
+                String dbName = resource.getMetadata().getName();
+                LOGGER.infof("%s %s", dbName, resource.getSpec());
+                Optional<DataStoreJobTemplate> jobTemplate = jobTemplateService.buildCreateDataStoreTemplate(resource);
+
+                if(jobTemplate.isEmpty()) {
+                    LOGGER.error("Provider '%s' is not configured");
+                    System.exit(-1);
+                    return;
+                }
+
+                jobService.create(jobTemplate.get().getJob(), new JobWatcher() {
+                    @Override
+                    public void onActive(Job job) {
+                        LOGGER.debugf(":WATCHER: onActive %s", job.getMetadata().getName());
+                    }
+
+                    @Override
+                    public void onSucceeded(Job job) {
+                        DataStoreStatus status = new DataStoreStatus();
+                        status.setTest("hello");
+
+                        statusUpdateService.updateStatus(resource, status);
+                    }
+
+                    @Override
+                    public void onFailed(Job job) {
+                        LOGGER.infof(":WATCHER: onFailed %s", job.getMetadata().getName());
+                    }
+                });
+            }
+        }
+    }
+    /*
     public void runWatch() {
         new Thread(() -> cache.listThenWatch(this::handleEvent)).start();
     }
@@ -42,7 +89,7 @@ public class DataStoreOperator {
         String dbName = db.getMetadata().getName();
         LOGGER.infof("%s %s %s", action, dbName, db.getSpec());
         jobService.startJob("test", dbName);
-  /*
+
         dbClient.execute(queryGenerator.createDatabaseIfNotExists(dbName));
 
         Map<String, DatabaseUser.Role> roles = collectRoles(db.getSpec());
@@ -59,10 +106,10 @@ public class DataStoreOperator {
         }
 
         dbClient.createDatabase(dbName, usersToCreate);
-        */
+
 
     }
-/*
+
     private Map<String, DatabaseUser.Role> collectRoles(DataStoreSpec spec) {
         Map<String, DatabaseUser.Role> roles = new HashMap<>();
 
