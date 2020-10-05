@@ -4,6 +4,8 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import org.freemountain.operator.common.Constants;
+import org.freemountain.operator.common.InstanceConfig;
 import org.freemountain.operator.dtos.DataStoreProviderConfig;
 import org.freemountain.operator.crds.DataStoreResource;
 
@@ -27,13 +29,15 @@ public class DataStoreJobTemplate extends JobTemplate {
         }
     }
 
+    private InstanceConfig instanceConfig;
     private DataStoreProviderConfig dataStoreProviderConfig;
     private DataStoreResource dataStoreResource;
     private Type type;
     private final String nameSuffix = String.valueOf(new Date().getTime());
 
-    public static DataStoreJobTemplate createDataStore(DataStoreProviderConfig dataStoreProviderConfig, DataStoreResource dataStoreResource) {
+    public static DataStoreJobTemplate createDataStore(InstanceConfig instanceConfig, DataStoreProviderConfig dataStoreProviderConfig, DataStoreResource dataStoreResource) {
         DataStoreJobTemplate template = new DataStoreJobTemplate();
+        template.instanceConfig = instanceConfig;
         template.dataStoreProviderConfig = dataStoreProviderConfig;
         template.dataStoreResource = dataStoreResource;
         template.type = Type.CREATE_DATASTORE;
@@ -43,6 +47,16 @@ public class DataStoreJobTemplate extends JobTemplate {
 
     public String getDataStoreName() {
         return dataStoreResource.getSpec().getName();
+    }
+
+
+    @Override
+    public Map<String, String> getLabels() {
+        Map<String, String> labels = super.getLabels();
+
+        labels.put(Constants.INSTANCE_ID_LABEL, instanceConfig.getId());
+
+        return labels;
     }
 
     @Override

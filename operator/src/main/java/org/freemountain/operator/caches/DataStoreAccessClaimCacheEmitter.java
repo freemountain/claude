@@ -37,6 +37,6 @@ public class DataStoreAccessClaimCacheEmitter extends ResourceCacheEmitter<DataS
 
     @Outgoing(DataStoreAccessClaimLifecycleEvent.ADDRESS)
     Publisher<DataStoreAccessClaimLifecycleEvent> connect() {
-        return watch().onItem().apply(event -> new DataStoreAccessClaimLifecycleEvent(event.getType(), event.getResources()));
+        return watch().onItem().apply(DataStoreAccessClaimLifecycleEvent::new);
     }
 }

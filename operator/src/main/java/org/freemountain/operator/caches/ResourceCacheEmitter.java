@@ -11,20 +11,27 @@ import io.fabric8.kubernetes.client.dsl.Watchable;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.operators.multi.processors.UnicastProcessor;
-import org.freemountain.operator.events.LifecycleEvent;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.freemountain.operator.common.LifecycleType;
+import org.freemountain.operator.common.ResourceUtils;
+import org.freemountain.operator.events.LifecycleEvent;
 import org.jboss.logging.Logger;
 
+import javax.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static org.freemountain.operator.common.ResourceUtils.inspect;
+import java.util.stream.Collectors;
 
 public abstract class ResourceCacheEmitter<T extends HasMetadata, L extends KubernetesResourceList<T>, D extends Doneable<T>, R extends Resource<T, D>> {
-
     private static final Logger LOGGER = Logger.getLogger(ResourceCacheEmitter.class);
+
+    @Inject
+    ManagedExecutor managedExecutor;
 
     private final Map<String, T> cache = new ConcurrentHashMap<>();
 
@@ -36,19 +43,7 @@ public abstract class ResourceCacheEmitter<T extends HasMetadata, L extends Kube
         return cache.get(uid);
     }
 
-
     protected Multi<LifecycleEvent<T>> watch() {
-        Multi<LifecycleEvent<T>> initialEvents = Multi.createFrom().emitter(emitter -> {
-            List<T> items = getListClient().list().getItems();
-
-            if (items.size() > 0) {
-                LifecycleEvent<T> event = new LifecycleEvent<T>(LifecycleType.ADDED, items);
-                emitter.emit(event);
-            }
-
-            emitter.complete();
-        });
-
         UnicastProcessor<LifecycleEvent<T>> buffer = UnicastProcessor.create();
         getWatchClient().watch(new Watcher<T>() {
             @Override
@@ -60,7 +55,7 @@ public abstract class ResourceCacheEmitter<T extends HasMetadata, L extends Kube
                     return;
                 }
 
-                LifecycleEvent<T> event = new LifecycleEvent<T>(type.get(), t);
+                LifecycleEvent<T> event = new LifecycleEvent<T>(type.get(), t, false, false);
                 buffer.onNext(event);
             }
 
@@ -70,41 +65,27 @@ public abstract class ResourceCacheEmitter<T extends HasMetadata, L extends Kube
             }
         });
 
-        Multi<LifecycleEvent<T>> watchedEvents = buffer.on().failure().invoke(error -> {
-            LOGGER.errorf(error, "kubernetes resource watcher failed");
-            System.exit(-1);
-        });
-
-        return Multi
-                .createBy().concatenating().streams(initialEvents, watchedEvents)
+        return buffer
+                .on().failure().invoke(error -> {
+                    LOGGER.errorf(error, "kubernetes resource watcher failed");
+                    System.exit(-1);
+                })
                 .transform().byTestingItemsWith(this::applyOnCache)
-                .onItem().invoke(event -> LOGGER.debugf("LifecycleEvent %s %s", event.getType(), inspect(event.getResources())));
+                .onItem().invoke(event -> LOGGER.debugf("LifecycleEvent %s %s", event.getType(), ResourceUtils.inspect(event.getResource())));
     }
 
     private Uni<Boolean> applyOnCache(LifecycleEvent<T> event) {
-        if (event.getType().equals(LifecycleType.ADDED) && event.getResources().size() > 1) {
-            for (T resource : event.getResources()) {
-                String uid = resource.getMetadata().getUid();
-                cache.put(uid, resource);
-            }
-            return Uni.createFrom().item(true);
-        }
-
         T resource = event.getResource();
         String uid = resource.getMetadata().getUid();
 
         if (event.getType().equals(LifecycleType.ADDED) && !cache.containsKey(uid)) {
-            cache.put(uid, resource);
+            cache.put(uid, event.getResource());
             return Uni.createFrom().item(true);
         }
 
         if (event.getType().equals(LifecycleType.MODIFIED) && cache.containsKey(uid)) {
-            int knownResourceVersion = Integer.parseInt(cache.get(uid).getMetadata().getResourceVersion());
-            int receivedResourceVersion = Integer.parseInt(resource.getMetadata().getResourceVersion());
-            if (knownResourceVersion <= receivedResourceVersion) {
-                cache.put(uid, resource);
-                return Uni.createFrom().item(true);
-            }
+            cache.put(uid, resource);
+            return Uni.createFrom().item(true);
         }
 
         if (event.getType().equals(LifecycleType.DELETED) && cache.containsKey(uid)) {
@@ -112,7 +93,7 @@ public abstract class ResourceCacheEmitter<T extends HasMetadata, L extends Kube
             return Uni.createFrom().item(true);
         }
 
-        LOGGER.debugf("Skipped old %s event (%s)", event.getType(), inspect(event.getResources()));
+        LOGGER.debugf("Skipped invalid %s event (%s)", event.getType(), ResourceUtils.inspect(event.getResource()));
         return Uni.createFrom().item(false);
     }
 

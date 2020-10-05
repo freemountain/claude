@@ -8,7 +8,7 @@ import java.util.List;
 public class DataStoreAccessClaimLifecycleEvent extends LifecycleEvent<DataStoreAccessClaimResource>{
     public static final String ADDRESS = "lifecycle.datastoreaccessclaim";
 
-    public DataStoreAccessClaimLifecycleEvent(LifecycleType type, List<DataStoreAccessClaimResource> resources) {
-        super(type, resources);
+    public DataStoreAccessClaimLifecycleEvent(LifecycleEvent<DataStoreAccessClaimResource> other) {
+        super(other);
     }
 }

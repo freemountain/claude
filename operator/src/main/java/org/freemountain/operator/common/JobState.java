@@ -8,23 +8,24 @@ import java.util.Optional;
 public enum JobState {
     ACTIVE,
     SUCCEEDED,
-    FAILED;
+    FAILED,
+    UNKNOWN;
 
-    public static Optional<JobState> from(Job job) {
+    public static JobState from(Job job) {
         JobStatus status = job.getStatus();
         Integer active = status.getActive();
         Integer succeeded = status.getSucceeded();
         Integer failed = status.getFailed();
 
         if(active != null && succeeded == null && failed == null ) {
-            return Optional.of(ACTIVE);
+            return ACTIVE;
         }
         if(active == null && succeeded != null && failed == null ) {
-            return Optional.of(SUCCEEDED);
+            return SUCCEEDED;
         }
         if(active == null && succeeded == null && failed != null ) {
-            return Optional.of(FAILED);
+            return FAILED;
         }
-        return Optional.empty();
+        return UNKNOWN;
     }
 }

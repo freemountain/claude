@@ -7,6 +7,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.kubernetes.client.dsl.internal.RawCustomResourceOperationsImpl;
 import io.fabric8.kubernetes.internal.KubernetesDeserializer;
+import org.freemountain.operator.common.CRD;
 import org.freemountain.operator.crds.*;
 
 import javax.enterprise.inject.Produces;
@@ -24,32 +25,29 @@ public class KubernetesClientProvider {
     @Singleton
     @Named("rawDataStoreClient")
     RawCustomResourceOperationsImpl getRawDataStoreClient(
-            @Named("dataStoreCrdContext") CustomResourceDefinitionContext dataStoreCrdContext,
             KubernetesClient defaultClient
     ) {
-        return defaultClient.customResource(dataStoreCrdContext);
+        return defaultClient.customResource(CRD.DataStore.CONTEXT);
     }
 
     @Produces
     @Singleton
     NonNamespaceOperation<DataStoreResource, DataStoreResourceList, DataStoreResourceDoneable, Resource<DataStoreResource, DataStoreResourceDoneable>> makeDataStoreClient(
-            KubernetesClient defaultClient,
-            @Named("dataStoreCrdContext") CustomResourceDefinitionContext dataStoreCrdContext
+            KubernetesClient defaultClient
     ) {
+        CustomResourceDefinitionContext crdContext = CRD.DataStore.CONTEXT;
+        String apiVersion = crdContext.getGroup() + "/" + crdContext.getVersion();
+        KubernetesDeserializer.registerCustomKind(apiVersion, crdContext.getKind(), DataStoreResource.class);
 
-        String apiVersion = dataStoreCrdContext.getGroup() + "/" + dataStoreCrdContext.getVersion();
-        KubernetesDeserializer.registerCustomKind(apiVersion, dataStoreCrdContext.getKind(), DataStoreResource.class);
-
-        return defaultClient.customResources(dataStoreCrdContext, DataStoreResource.class, DataStoreResourceList.class, DataStoreResourceDoneable.class);
+        return defaultClient.customResources(crdContext, DataStoreResource.class, DataStoreResourceList.class, DataStoreResourceDoneable.class);
     }
 
     @Produces
     @Singleton
     NonNamespaceOperation<DataStoreAccessClaimResource, DataStoreAccessClaimResourceList, DataStoreAccessClaimResourceDoneable, Resource<DataStoreAccessClaimResource, DataStoreAccessClaimResourceDoneable>> makeDataStoreAccessClaimClient(
-            KubernetesClient defaultClient,
-            @Named("dataStoreAccessClaimCrdContext") CustomResourceDefinitionContext crdContext
+            KubernetesClient defaultClient
     ) {
-
+        CustomResourceDefinitionContext crdContext = CRD.DataStoreAccessClaim.CONTEXT;
         String apiVersion = crdContext.getGroup() + "/" + crdContext.getVersion();
         KubernetesDeserializer.registerCustomKind(apiVersion, crdContext.getKind(), DataStoreAccessClaimResource.class);
 

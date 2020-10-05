@@ -5,6 +5,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.batch.JobBuilder;
+import org.freemountain.operator.common.Constants;
 
 import java.util.*;
 
@@ -46,6 +47,7 @@ public abstract class JobTemplate {
                 .withApiVersion("batch/v1")
                 .withNewMetadata()
                 .withName(getName())
+                .withLabels(getLabels())
                 .withOwnerReferences(getOwnerReferences())
                 .endMetadata()
                 .withNewSpec()
@@ -58,6 +60,10 @@ public abstract class JobTemplate {
                 .endTemplate()
                 .endSpec()
                 .build();
+    }
+
+    public Map<String, String> getLabels() {
+        return new HashMap<>();
     }
 
     public boolean isFromThisTemplate(Job job) {

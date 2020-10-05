@@ -37,6 +37,6 @@ public class DataStoreCacheEmitter extends ResourceCacheEmitter<DataStoreResourc
 
     @Outgoing(DataStoreLifecycleEvent.ADDRESS)
     Publisher<DataStoreLifecycleEvent> connect() {
-        return watch().onItem().apply(event -> new DataStoreLifecycleEvent(event.getType(), event.getResources()));
+        return watch().onItem().apply(DataStoreLifecycleEvent::new);
     }
 }

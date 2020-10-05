@@ -2,6 +2,6 @@ apiVersion: instana.com/v1alpha1
 kind: DataStore
 metadata:
   name: example
--spec:
+spec:
   provider: test
   name: example-db

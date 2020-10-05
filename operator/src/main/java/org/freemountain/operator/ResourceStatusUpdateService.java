@@ -16,6 +16,8 @@ public class ResourceStatusUpdateService {
     @Named("rawDataStoreClient")
     RawCustomResourceOperationsImpl rawDataStoreClient;
 
+
+
     @Inject
     @Named("namespace")
     String namespace;
@@ -31,5 +33,7 @@ public class ResourceStatusUpdateService {
             e.printStackTrace();
         }
     }
+
+
 
 }

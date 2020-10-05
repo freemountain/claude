@@ -1,14 +1,18 @@
-package org.freemountain.operator.kubernetes;
+package org.freemountain.operator.operators;
 
-import io.fabric8.kubernetes.api.model.batch.Job;
+import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.freemountain.operator.ResourceStatusUpdateService;
-import org.freemountain.operator.events.DataStoreLifecycleEvent;
+import org.freemountain.operator.caches.DataStoreCacheEmitter;
+import org.freemountain.operator.common.CRD;
+import org.freemountain.operator.common.JobState;
 import org.freemountain.operator.common.LifecycleType;
-import org.freemountain.operator.kubernetes.jobs.JobService;
-import org.freemountain.operator.kubernetes.jobs.JobWatcher;
 import org.freemountain.operator.crds.DataStoreResource;
 import org.freemountain.operator.dtos.DataStoreStatus;
+import org.freemountain.operator.events.DataStoreLifecycleEvent;
+import org.freemountain.operator.events.JobLifecycleEvent;
+import org.freemountain.operator.events.LifecycleEvent;
 import org.freemountain.operator.templates.DataStoreJobTemplate;
 import org.freemountain.operator.templates.JobTemplateService;
 import org.jboss.logging.Logger;
@@ -22,49 +26,55 @@ public class DataStoreOperator {
     private static final Logger LOGGER = Logger.getLogger(DataStoreOperator.class);
 
     @Inject
-    JobService jobService;
+    DataStoreCacheEmitter dataStoreCache;
 
     @Inject
     JobTemplateService jobTemplateService;
 
     @Inject
+    KubernetesClient kubernetesClient;
+
+    @Inject
     ResourceStatusUpdateService statusUpdateService;
 
+    @Incoming(JobLifecycleEvent.ADDRESS)
+    void onJobEvent(JobLifecycleEvent event) {
+        if(event.getType().equals(LifecycleType.DELETED)) {
+            return;
+        }
+
+        Optional<OwnerReference> ownerReference = jobTemplateService.getOwningResource(CRD.Type.DATA_STORE, event.getResource());
+
+        if (ownerReference.isEmpty() || JobState.UNKNOWN.equals(event.getJobState())) {
+            return;
+        }
+
+        DataStoreResource dataStore = dataStoreCache.get(ownerReference.get().getUid());
+
+        if (dataStore == null) {
+            return;
+        }
+
+        LOGGER.debugf("Job for dataSource '%s' is %s", dataStore.getMetadata().getName(), event.getJobState());
+        DataStoreStatus status = new DataStoreStatus();
+        status.setTest(event.getJobState().name());
+        statusUpdateService.updateStatus(dataStore, status);
+    }
 
     @Incoming(DataStoreLifecycleEvent.ADDRESS)
-    void onEvent(DataStoreLifecycleEvent event) {
-        if(event.getType().equals(LifecycleType.ADDED)) {
-            for(DataStoreResource resource : event.getResources()) {
-                String dbName = resource.getMetadata().getName();
-                LOGGER.infof("%s %s", dbName, resource.getSpec());
-                Optional<DataStoreJobTemplate> jobTemplate = jobTemplateService.buildCreateDataStoreTemplate(resource);
+    void onDataStoreEvent(DataStoreLifecycleEvent event) {
+        if (event.getType().equals(LifecycleType.ADDED)) {
+            DataStoreResource resource = event.getResource();
+            Optional<DataStoreJobTemplate> jobTemplate = jobTemplateService.buildCreateDataStoreTemplate(resource);
 
-                if(jobTemplate.isEmpty()) {
-                    LOGGER.error("Provider '%s' is not configured");
-                    System.exit(-1);
-                    return;
-                }
-
-                jobService.create(jobTemplate.get().getJob(), new JobWatcher() {
-                    @Override
-                    public void onActive(Job job) {
-                        LOGGER.debugf(":WATCHER: onActive %s", job.getMetadata().getName());
-                    }
-
-                    @Override
-                    public void onSucceeded(Job job) {
-                        DataStoreStatus status = new DataStoreStatus();
-                        status.setTest("hello");
-
-                        statusUpdateService.updateStatus(resource, status);
-                    }
-
-                    @Override
-                    public void onFailed(Job job) {
-                        LOGGER.infof(":WATCHER: onFailed %s", job.getMetadata().getName());
-                    }
-                });
+            if (jobTemplate.isEmpty()) {
+                LOGGER.error("Provider '%s' is not configured");
+                System.exit(-1);
+                return;
             }
+
+            LOGGER.debugf("DataStore %s was created)", resource.getMetadata().getName());
+            kubernetesClient.batch().jobs().create(jobTemplate.get().getJob());
         }
     }
     /*

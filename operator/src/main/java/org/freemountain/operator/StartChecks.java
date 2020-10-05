@@ -1,22 +1,31 @@
 package org.freemountain.operator;
 
 import io.quarkus.runtime.StartupEvent;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.freemountain.operator.providers.DataStoreConfigProvider;
 import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
+import javax.inject.Named;
+import java.util.Optional;
 
 @ApplicationScoped
 public class StartChecks {
     private static final Logger LOG = Logger.getLogger(StartChecks.class);
 
-@Inject
-DataStoreConfigProvider configProvider;
+    @Inject
+    @Named("namespace")
+    String namespace;
+
+    @Inject
+    DataStoreConfigProvider configProvider;
 
     void onStartup(@Observes StartupEvent _ev) {
 
+        LOG.infof("namespace %s", namespace);
+        System.exit(0);
        // LOG.infof("sss %s", configProvider.getConfig("test"));
 
        //s op.runWatch();

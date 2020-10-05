@@ -8,33 +8,38 @@ import java.util.List;
 
 public class LifecycleEvent<T> {
 
-    private LifecycleType type;
-    private List<T> resources;
+    private final LifecycleType type;
+    private final boolean isInitial;
+    private final boolean isLastInitial;
+    private final T resource;
 
-    public LifecycleEvent(LifecycleType type, T resource) {
-        this.type = type;
-        this.resources = Collections.singletonList(resource);
+    public LifecycleEvent(LifecycleType tye, T resource, boolean isInitial, boolean isLastInitial) {
+        this.type = tye;
+        this.resource = resource;
+        this.isInitial = isInitial;
+        this.isLastInitial = isInitial && isLastInitial;
     }
 
-    public LifecycleEvent(LifecycleType type, List<T> resources) {
-        this.type = type;
-        this.resources = new LinkedList<>();
-        this.resources.addAll(resources);
+    public LifecycleEvent(LifecycleEvent<T> other) {
+        this.type = other.type;
+        this.resource = other.resource;
+        this.isInitial = other.isInitial;
+        this.isLastInitial = other.isLastInitial;
     }
 
     public LifecycleType getType() {
         return type;
     }
 
-    public List<T> getResources() {
-        return resources;
-    }
-
     public T getResource() {
-        if(resources != null && resources.size() > 0) {
-            return resources.get(0);
-        }
-        return null;
+        return resource;
     }
 
+    public boolean isInitial() {
+        return isInitial;
+    }
+
+    public boolean isLastInitial() {
+        return isLastInitial;
+    }
 }
