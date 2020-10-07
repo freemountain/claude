@@ -9,4 +9,4 @@ spec:
   dataStoreSelector:
     matchName: "example"
   secretSelector:
-    matchNames: ["both-user"]
+    matchName: "both-user"

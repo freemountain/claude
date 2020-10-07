@@ -1,0 +1,6 @@
+apiVersion: foo.com/v1
+kind: Stable
+metadata:
+  name: myres
+spec:
+  prop: test

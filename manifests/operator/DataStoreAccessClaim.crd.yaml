@@ -18,8 +18,14 @@ spec:
                 roles:
                   type: array
                   items: { type: string }
-                dataStoreSelector: { type: object }
-                secretSelector: { type: object }
+                dataStoreSelector: 
+                  type: object
+                  properties:
+                    matchName: { type: string }
+                secretSelector: 
+                  type: object
+                  properties:
+                    matchName: { type: string }
 
       subresources:
         status: {}

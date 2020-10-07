@@ -1,0 +1,6 @@
+apiVersion: myapps.examples.org/v1
+kind: MySQL
+metadata:
+  name: example
+spec:
+  prop: test

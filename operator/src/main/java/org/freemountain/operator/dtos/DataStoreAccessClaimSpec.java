@@ -16,7 +16,7 @@ public class DataStoreAccessClaimSpec {
     private MatchNameSelector dataStoreSelector;
 
     @JsonProperty("secretSelector")
-    private MatchNamesSelector secretSelector;
+    private MatchNameSelector secretSelector;
 
     public List<String> getRoles() {
         return roles;
@@ -26,7 +26,7 @@ public class DataStoreAccessClaimSpec {
         return dataStoreSelector;
     }
 
-    public MatchNamesSelector getSecretSelector() {
+    public MatchNameSelector getSecretSelector() {
         return secretSelector;
     }
 
@@ -38,7 +38,7 @@ public class DataStoreAccessClaimSpec {
         this.dataStoreSelector = dataStoreSelector;
     }
 
-    public void setSecretSelector(MatchNamesSelector secretSelector) {
+    public void setSecretSelector(MatchNameSelector secretSelector) {
         this.secretSelector = secretSelector;
     }
 

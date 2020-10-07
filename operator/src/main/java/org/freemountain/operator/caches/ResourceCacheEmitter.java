@@ -18,14 +18,12 @@ import org.freemountain.operator.events.LifecycleEvent;
 import org.jboss.logging.Logger;
 
 import javax.inject.Inject;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class ResourceCacheEmitter<T extends HasMetadata, L extends KubernetesResourceList<T>, D extends Doneable<T>, R extends Resource<T, D>> {
     private static final Logger LOGGER = Logger.getLogger(ResourceCacheEmitter.class);
@@ -39,8 +37,12 @@ public abstract class ResourceCacheEmitter<T extends HasMetadata, L extends Kube
 
     protected abstract Watchable<?, Watcher<T>> getWatchClient();
 
-    public T get(String uid) {
-        return cache.get(uid);
+    public Optional<T> get(String uid) {
+        return Optional.ofNullable(cache.get(uid));
+    }
+
+    public Collection<T> values() {
+        return cache.values();
     }
 
     protected Multi<LifecycleEvent<T>> watch() {

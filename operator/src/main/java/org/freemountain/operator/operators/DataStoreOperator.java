@@ -39,26 +39,24 @@ public class DataStoreOperator {
 
     @Incoming(JobLifecycleEvent.ADDRESS)
     void onJobEvent(JobLifecycleEvent event) {
-        if(event.getType().equals(LifecycleType.DELETED)) {
+        if(event.getType().equals(LifecycleType.DELETED)
+            || JobState.UNKNOWN.equals(event.getJobState())
+            || !jobTemplateService.isFromCurrentInstance(event.getResource())) {
             return;
         }
 
-        Optional<OwnerReference> ownerReference = jobTemplateService.getOwningResource(CRD.Type.DATA_STORE, event.getResource());
+        Optional<DataStoreResource> dataStore = jobTemplateService.getOwningResource(CRD.Type.DATA_STORE, event.getResource())
+                .map(OwnerReference::getUid)
+                .flatMap(dataStoreCache::get);
 
-        if (ownerReference.isEmpty() || JobState.UNKNOWN.equals(event.getJobState())) {
+        if (dataStore.isEmpty()) {
             return;
         }
 
-        DataStoreResource dataStore = dataStoreCache.get(ownerReference.get().getUid());
-
-        if (dataStore == null) {
-            return;
-        }
-
-        LOGGER.debugf("Job for dataSource '%s' is %s", dataStore.getMetadata().getName(), event.getJobState());
+        LOGGER.debugf("Job for dataSource '%s' is %s", dataStore.get().getMetadata().getName(), event.getJobState());
         DataStoreStatus status = new DataStoreStatus();
         status.setTest(event.getJobState().name());
-        statusUpdateService.updateStatus(dataStore, status);
+        statusUpdateService.updateStatus(dataStore.get(), status);
     }
 
     @Incoming(DataStoreLifecycleEvent.ADDRESS)

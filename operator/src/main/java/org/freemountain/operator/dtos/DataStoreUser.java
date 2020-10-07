@@ -1,13 +1,14 @@
 package org.freemountain.operator.dtos;
 
+import java.util.Collection;
 import java.util.Set;
 
 public class DataStoreUser {
     private final String username;
     private final String password;
-    private final Set<String> roles;
+    private final Collection<String> roles;
 
-    public DataStoreUser(String username, String password, Set<String> roles) {
+    public DataStoreUser(String username, String password, Collection<String> roles) {
         this.username = username;
         this.password = password;
         this.roles = roles;
@@ -21,7 +22,7 @@ public class DataStoreUser {
         return password;
     }
 
-    public Set<String> getRoles() {
+    public Collection<String> getRoles() {
         return roles;
     }
 

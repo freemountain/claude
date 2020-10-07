@@ -65,13 +65,4 @@ public abstract class JobTemplate {
     public Map<String, String> getLabels() {
         return new HashMap<>();
     }
-
-    public boolean isFromThisTemplate(Job job) {
-        List<OwnerReference> ownerReferences = job.getMetadata().getOwnerReferences();
-        if(ownerReferences.size() != getOwnerReferences().size() || !ownerReferences.containsAll(getOwnerReferences())) {
-            return false;
-        }
-        return getName().equals(job.getMetadata().getName());
-
-    }
 }
