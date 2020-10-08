@@ -13,6 +13,13 @@ public class LifecycleEvent<T> {
     private final boolean isLastInitial;
     private final T resource;
 
+    public LifecycleEvent(LifecycleType tye, T resource) {
+        this.type = tye;
+        this.resource = resource;
+        this.isInitial = false;
+        this.isLastInitial = false;
+    }
+
     public LifecycleEvent(LifecycleType tye, T resource, boolean isInitial, boolean isLastInitial) {
         this.type = tye;
         this.resource = resource;
