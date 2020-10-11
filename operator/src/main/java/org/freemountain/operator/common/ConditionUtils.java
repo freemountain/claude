@@ -43,24 +43,4 @@ public class ConditionUtils {
 
         return result;
     }
-
-    public static <T extends HasBaseStatus & HasMetadata> T updateConditions(Function<T, T> updateStatus, Supplier<T> create, T target, List<BaseCondition> conditions) {
-        var copied = create.get();
-        copied.getMetadata().setUid(target.getMetadata().getUid());
-        copied.getMetadata().setName(target.getMetadata().getName());
-        copied.getMetadata().setResourceVersion(target.getMetadata().getResourceVersion());
-
-        if (copied.getStatus() == null) {
-            copied.setStatus(new BaseStatus());
-        }
-        copied.getStatus().setConditions(conditions);
-        try {
-            return updateStatus.apply(copied);
-        } catch(KubernetesClientException e) {
-            LOGGER.warnf("updateStatus failed with '%s'", e.getMessage());
-            return null;
-        }
-
-    }
-
 }

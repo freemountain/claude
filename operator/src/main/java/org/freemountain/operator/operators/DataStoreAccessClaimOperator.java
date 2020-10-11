@@ -19,6 +19,7 @@ import org.freemountain.operator.templates.DataStoreJobTemplate;
 import org.freemountain.operator.templates.JobTemplateService;
 import org.jboss.logging.Logger;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.Base64;
@@ -42,37 +43,17 @@ public class DataStoreAccessClaimOperator {
     JobTemplateService jobTemplateService;
 
     @Inject
-    NonNamespaceOperation<DataStoreAccessClaimResource, DataStoreAccessClaimResourceList, DataStoreAccessClaimResourceDoneable, Resource<DataStoreAccessClaimResource, DataStoreAccessClaimResourceDoneable>> dataStoreAccessClaimResourceClient;
+    DataStoreAccessClaimApiClient dataStoreAccessClaimResourceClient;
+    JobEventConditionUpdater<DataStoreAccessClaimResource> jobCondition;
 
+    @PostConstruct
+    public void init() {
+        jobCondition = new JobEventConditionUpdater<>(dataStoreAccessClaimCacheEmitter, dataStoreAccessClaimResourceClient);
+    }
 
     @Incoming(JobLifecycleEvent.ADDRESS)
     void onJobEvent(JobLifecycleEvent event) {
-        if (!event.isFinishedEvent()) {
-            return;
-        }
-
-        var dataStoreAccessClaimResource = jobTemplateService.getOwningResource(CRD.Type.DATA_STORE_ACCESS_CLAIM, event.getResource())
-                .map(OwnerReference::getUid)
-                .flatMap(dataStoreAccessClaimCacheEmitter::get)
-                .orElse(null);
-
-        if (dataStoreAccessClaimResource == null) {
-            return;
-        }
-
-        LOGGER.debugf("Job for dataStoreAccessClaimResource '%s' changed to %s", dataStoreAccessClaimResource.getMetadata().getName(), event.getJobState());
-
-        BaseCondition condition = new BaseCondition();
-        condition.setType(ConditionUtils.READY_CONDITION_NAME);
-        condition.setStatus(ConditionUtils.TRUE);
-
-        if (event.getJobState().equals(JobState.FAILED)) {
-            condition.setStatus(ConditionUtils.FALSE);
-        }
-
-        var conditions = dataStoreAccessClaimResource.getStatus() != null ? dataStoreAccessClaimResource.getStatus().getConditions() : null;
-
-        ConditionUtils.updateConditions(dataStoreAccessClaimResourceClient::updateStatus, DataStoreAccessClaimResource::new, dataStoreAccessClaimResource, ConditionUtils.set(conditions, condition));
+        jobCondition.onJobEvent(event);
   }
 
     @Incoming(DataStoreAccessClaimLifecycleEvent.ADDRESS)

@@ -7,6 +7,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.freemountain.operator.caches.DataStoreCacheEmitter;
 import org.freemountain.operator.common.*;
+import org.freemountain.operator.crds.DataStoreApiClient;
 import org.freemountain.operator.crds.DataStoreResource;
 import org.freemountain.operator.crds.DataStoreResourceDoneable;
 import org.freemountain.operator.crds.DataStoreResourceList;
@@ -17,6 +18,7 @@ import org.freemountain.operator.templates.DataStoreJobTemplate;
 import org.freemountain.operator.templates.JobTemplateService;
 import org.jboss.logging.Logger;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.Optional;
@@ -35,36 +37,17 @@ public class DataStoreOperator {
     KubernetesClient kubernetesClient;
 
     @Inject
-    NonNamespaceOperation<DataStoreResource, DataStoreResourceList, DataStoreResourceDoneable, Resource<DataStoreResource, DataStoreResourceDoneable>> dataStoreClient;
+    DataStoreApiClient dataStoreClient;
+    JobEventConditionUpdater<DataStoreResource> jobCondition;
+
+    @PostConstruct
+    public void init() {
+        jobCondition = new JobEventConditionUpdater<>(dataStoreCache, dataStoreClient);
+    }
 
     @Incoming(JobLifecycleEvent.ADDRESS)
     void onJobEvent(JobLifecycleEvent event) {
-        if (!event.isFinishedEvent()) {
-            return;
-        }
-
-        DataStoreResource dataStore = jobTemplateService.getOwningResource(CRD.Type.DATA_STORE, event.getResource())
-                .map(OwnerReference::getUid)
-                .flatMap(dataStoreCache::get)
-                .orElse(null);
-
-        if (dataStore == null) {
-            return;
-        }
-
-        LOGGER.debugf("Job '%s' for dataSource '%s' changed to %s",event.getResource().getMetadata().getName(), dataStore.getMetadata().getName(), event.getJobState());
-
-        BaseCondition condition = new BaseCondition();
-        condition.setType(ConditionUtils.READY_CONDITION_NAME);
-        condition.setStatus(ConditionUtils.TRUE);
-
-        if (event.getJobState().equals(JobState.FAILED)) {
-            condition.setStatus(ConditionUtils.FALSE);
-        }
-
-        var conditions = dataStore.getStatus() != null ? dataStore.getStatus().getConditions() : null;
-
-        ConditionUtils.updateConditions(dataStoreClient::updateStatus, DataStoreResource::new, dataStore, ConditionUtils.set(conditions, condition));
+        jobCondition.onJobEvent(event);
     }
 
     @Incoming(DataStoreLifecycleEvent.ADDRESS)

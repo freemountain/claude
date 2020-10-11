@@ -15,6 +15,7 @@ import io.smallrye.mutiny.operators.multi.processors.UnicastProcessor;
 import io.smallrye.reactive.messaging.annotations.Broadcast;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.freemountain.operator.common.CRD;
+import org.freemountain.operator.common.CRDContext;
 import org.freemountain.operator.common.LifecycleType;
 import org.freemountain.operator.events.DataStoreLifecycleEvent;
 import org.freemountain.operator.crds.DataStoreResource;
@@ -32,11 +33,13 @@ import javax.inject.Inject;
 public class DataStoreCacheEmitter extends CachedEmitter<DataStoreResource> {
     static class DataStoreHandler extends LifecycleClient.KubernetesEventHandler<DataStoreResource> implements ResourceEventHandler<DataStoreResource> {};
 
+    @Inject
+    CRDContext<DataStoreResource> ctx;
 
     @Outgoing(DataStoreLifecycleEvent.ADDRESS)
     @Broadcast
     Publisher<DataStoreLifecycleEvent> connect() {
-        SharedIndexInformer<DataStoreResource> informer = getInformerFactory().sharedIndexInformerForCustomResource(CRD.DataStore.CONTEXT, DataStoreResource.class, DataStoreResourceList.class, 60 *1000);
+        SharedIndexInformer<DataStoreResource> informer = getInformerFactory().sharedIndexInformerForCustomResource(ctx.getConfig(), DataStoreResource.class, DataStoreResourceList.class, 60 *1000);
         LifecycleClient<DataStoreResource> client = new LifecycleClient<DataStoreResource>(informer, new DataStoreHandler());
         return super.connect(client).onItem().transform(DataStoreLifecycleEvent::new);
     }

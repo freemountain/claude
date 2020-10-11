@@ -34,12 +34,4 @@ public class JobTemplateService {
                 .map(dataStoreProviderConfig -> new DataStoreJobTemplate.CreateUser(instanceConfig, dataStoreProviderConfig, resource, dataStoreAccessClaimResource, user));
     }
 
-    public Optional<OwnerReference> getOwningResource(CRD.Type type, HasMetadata job) {
-        List<OwnerReference> owners = job.getMetadata().getOwnerReferences();
-        owners = owners == null ? Collections.emptyList() : owners;
-
-        return owners.stream()
-                .filter(owner -> type.equals(CRD.Type.from(owner).orElse(null)))
-                .findFirst();
-    }
 }
