@@ -4,21 +4,18 @@ import io.fabric8.kubernetes.api.model.DoneableSecret;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.freemountain.operator.caches.DataStoreAccessClaimCacheEmitter;
 import org.freemountain.operator.caches.DataStoreCacheEmitter;
-import org.freemountain.operator.common.CRD;
-import org.freemountain.operator.common.JobState;
-import org.freemountain.operator.common.LifecycleType;
-import org.freemountain.operator.crds.DataStoreAccessClaimResource;
-import org.freemountain.operator.crds.DataStoreResource;
-import org.freemountain.operator.dtos.DataStoreStatus;
+import org.freemountain.operator.common.*;
+import org.freemountain.operator.crds.*;
+import org.freemountain.operator.dtos.BaseCondition;
 import org.freemountain.operator.dtos.DataStoreUser;
 import org.freemountain.operator.events.DataStoreAccessClaimLifecycleEvent;
 import org.freemountain.operator.events.JobLifecycleEvent;
 import org.freemountain.operator.templates.DataStoreJobTemplate;
-import org.freemountain.operator.templates.JobTemplate;
 import org.freemountain.operator.templates.JobTemplateService;
 import org.jboss.logging.Logger;
 
@@ -44,62 +41,77 @@ public class DataStoreAccessClaimOperator {
     @Inject
     JobTemplateService jobTemplateService;
 
+    @Inject
+    NonNamespaceOperation<DataStoreAccessClaimResource, DataStoreAccessClaimResourceList, DataStoreAccessClaimResourceDoneable, Resource<DataStoreAccessClaimResource, DataStoreAccessClaimResourceDoneable>> dataStoreAccessClaimResourceClient;
+
+
     @Incoming(JobLifecycleEvent.ADDRESS)
     void onJobEvent(JobLifecycleEvent event) {
-        if(event.getType().equals(LifecycleType.DELETED)
-                || JobState.UNKNOWN.equals(event.getJobState())
-                || !jobTemplateService.isFromCurrentInstance(event.getResource())) {
+        if (!event.isFinishedEvent()) {
             return;
         }
 
-        Optional<DataStoreAccessClaimResource> claimResource = jobTemplateService.getOwningResource(CRD.Type.DATA_STORE_ACCESS_CLAIM, event.getResource())
+        var dataStoreAccessClaimResource = jobTemplateService.getOwningResource(CRD.Type.DATA_STORE_ACCESS_CLAIM, event.getResource())
                 .map(OwnerReference::getUid)
-                .flatMap(dataStoreAccessClaimCacheEmitter::get);
+                .flatMap(dataStoreAccessClaimCacheEmitter::get)
+                .orElse(null);
 
-        if (claimResource.isEmpty()) {
+        if (dataStoreAccessClaimResource == null) {
             return;
         }
 
-        LOGGER.debugf("Job for dataStoreAccessClaimResource '%s' is %s", claimResource.get().getMetadata().getName(), event.getJobState());
-    }
+        LOGGER.debugf("Job for dataStoreAccessClaimResource '%s' changed to %s", dataStoreAccessClaimResource.getMetadata().getName(), event.getJobState());
+
+        BaseCondition condition = new BaseCondition();
+        condition.setType(ConditionUtils.READY_CONDITION_NAME);
+        condition.setStatus(ConditionUtils.TRUE);
+
+        if (event.getJobState().equals(JobState.FAILED)) {
+            condition.setStatus(ConditionUtils.FALSE);
+        }
+
+        var conditions = dataStoreAccessClaimResource.getStatus() != null ? dataStoreAccessClaimResource.getStatus().getConditions() : null;
+
+        ConditionUtils.updateConditions(dataStoreAccessClaimResourceClient::updateStatus, DataStoreAccessClaimResource::new, dataStoreAccessClaimResource, ConditionUtils.set(conditions, condition));
+  }
 
     @Incoming(DataStoreAccessClaimLifecycleEvent.ADDRESS)
     void onEvent(DataStoreAccessClaimLifecycleEvent event) {
-        if(LifecycleType.ADDED.equals(event.getType())) {
-            LOGGER.infof("Got %s %s", event.getType(), event.getResource());
-
-
-            var spec = event.getResource().getSpec();
-
-            Optional<Secret> matchedSecret = getSecret(spec.getSecretSelector().getMatchName());
-            Optional<DataStoreResource> matchedDataStore = dataStoreCache.values()
-                    .stream()
-                    .filter(e -> e.getMetadata().getName().equals(spec.getDataStoreSelector().getMatchName()))
-                    .findFirst();
-
-            if(matchedSecret.isEmpty() || matchedDataStore.isEmpty()) {
-                if(matchedSecret.isEmpty()){
-                    LOGGER.errorf("Could not find secret with name '%s'", spec.getSecretSelector().getMatchName());
-                }
-                if(matchedDataStore.isEmpty()){
-                    LOGGER.errorf("Could not find dataStore with name '%s'", spec.getDataStoreSelector().getMatchName());
-                }
-                return;
-            }
-
-            String username = getDecodedSecretValue(matchedSecret.get(), "username");
-            String password = getDecodedSecretValue(matchedSecret.get(), "password");
-            DataStoreUser user = new DataStoreUser(username, password, spec.getRoles());
-            Optional<DataStoreJobTemplate> jobTemplate = jobTemplateService.buildCreateUserTemplate(matchedDataStore.get(), user);
-
-            if (jobTemplate.isEmpty()) {
-                LOGGER.error("Provider '%s' is not configured");
-                System.exit(-1);
-                return;
-            }
-
-            kubernetesClient.batch().jobs().create(jobTemplate.get().getJob());
+        DataStoreAccessClaimResource resource = event.getResource();
+        if (!event.shouldCreateJob()) {
+            return;
         }
+
+        var spec = event.getResource().getSpec();
+
+        Optional<Secret> matchedSecret = getSecret(spec.getSecretSelector().getMatchName());
+        Optional<DataStoreResource> matchedDataStore = dataStoreCache.values()
+                .stream()
+                .filter(e -> e.getMetadata().getName().equals(spec.getDataStoreSelector().getMatchName()))
+                .findFirst();
+
+        if(matchedSecret.isEmpty() || matchedDataStore.isEmpty()) {
+            if(matchedSecret.isEmpty()){
+                LOGGER.errorf("Could not find secret with name '%s'", spec.getSecretSelector().getMatchName());
+            }
+            if(matchedDataStore.isEmpty()){
+                LOGGER.errorf("Could not find dataStore with name '%s'", spec.getDataStoreSelector().getMatchName());
+            }
+            return;
+        }
+
+        String username = getDecodedSecretValue(matchedSecret.get(), "username");
+        String password = getDecodedSecretValue(matchedSecret.get(), "password");
+        DataStoreUser user = new DataStoreUser(username, password, spec.getRoles());
+        Optional<DataStoreJobTemplate> jobTemplate = jobTemplateService.buildCreateUserTemplate(matchedDataStore.get(),resource, user);
+
+        if (jobTemplate.isEmpty()) {
+            LOGGER.error("Provider '%s' is not configured");
+            System.exit(-1);
+            return;
+
+        }
+        kubernetesClient.batch().jobs().create(jobTemplate.get().getJob());
     }
 
 

@@ -1,24 +1,23 @@
 package org.freemountain.operator.crds;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import org.freemountain.operator.common.CRD;
+import org.freemountain.operator.common.HasBaseStatus;
 import org.freemountain.operator.dtos.DataStoreSpec;
-import org.freemountain.operator.dtos.DataStoreStatus;
+import org.freemountain.operator.dtos.BaseStatus;
 
 @JsonDeserialize
 @RegisterForReflection
-public class DataStoreResource extends CustomResource {
-    @JsonProperty("spec")
+public class DataStoreResource extends CustomResource implements HasBaseStatus {
     private DataStoreSpec spec;
 
-    @JsonProperty("status")
-    private DataStoreStatus status;
+    private BaseStatus status;
 
     public DataStoreResource() {
-        super("DataStore");
-        setApiVersion("instana.com/v1alpha1");
+        super(CRD.DataStore.KIND);
+        setApiVersion(CRD.API_VERSION);
     }
 
     public DataStoreSpec getSpec() {
@@ -29,11 +28,11 @@ public class DataStoreResource extends CustomResource {
         this.spec = spec;
     }
 
-    public DataStoreStatus getStatus() {
+    public BaseStatus getStatus() {
         return status;
     }
 
-    public void setStatus(DataStoreStatus status) {
+    public void setStatus(BaseStatus status) {
         this.status = status;
     }
 

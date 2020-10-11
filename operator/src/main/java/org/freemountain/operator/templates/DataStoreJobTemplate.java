@@ -6,6 +6,7 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import org.freemountain.operator.common.Constants;
 import org.freemountain.operator.common.InstanceConfig;
+import org.freemountain.operator.crds.DataStoreAccessClaimResource;
 import org.freemountain.operator.crds.DataStoreResource;
 import org.freemountain.operator.dtos.DataStoreProviderConfig;
 import org.freemountain.operator.dtos.DataStoreUser;
@@ -29,9 +30,11 @@ public abstract class DataStoreJobTemplate extends JobTemplate {
 
     public static class CreateUser extends DataStoreJobTemplate {
         DataStoreUser user;
+        DataStoreAccessClaimResource dataStoreAccessClaimResource;
 
-        public CreateUser(InstanceConfig instanceConfig, DataStoreProviderConfig dataStoreProviderConfig, DataStoreResource dataStoreResource, DataStoreUser user) {
+        public CreateUser(InstanceConfig instanceConfig, DataStoreProviderConfig dataStoreProviderConfig, DataStoreResource dataStoreResource, DataStoreAccessClaimResource dataStoreAccessClaimResource, DataStoreUser user) {
             super(instanceConfig, dataStoreProviderConfig, dataStoreResource);
+            this.dataStoreAccessClaimResource = dataStoreAccessClaimResource;
             this.user= user;
             this.typeName = "create-user";
         }
@@ -42,6 +45,11 @@ public abstract class DataStoreJobTemplate extends JobTemplate {
             Collections.addAll(command, dataStoreProviderConfig.getJob().getEntry(), "createUserWithPrivileges", getDataStoreName(), user.getUsername(), user.getPassword());
             command.addAll(user.getRoles());
             return command;
+        }
+
+        @Override
+        public Optional<HasMetadata> getOwner() {
+            return Optional.of(dataStoreAccessClaimResource);
         }
     }
 

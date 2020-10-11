@@ -8,10 +8,13 @@ import java.util.Optional;
 public enum JobState {
     ACTIVE,
     SUCCEEDED,
-    FAILED,
-    UNKNOWN;
+    FAILED;
 
     public static JobState from(Job job) {
+        if(job == null) {
+            return null;
+        }
+
         JobStatus status = job.getStatus();
         Integer active = status.getActive();
         Integer succeeded = status.getSucceeded();
@@ -26,6 +29,7 @@ public enum JobState {
         if(active == null && succeeded == null && failed != null ) {
             return FAILED;
         }
-        return UNKNOWN;
+
+        return null;
     }
 }

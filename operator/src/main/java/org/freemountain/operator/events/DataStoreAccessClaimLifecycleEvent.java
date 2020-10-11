@@ -5,7 +5,7 @@ import org.freemountain.operator.crds.DataStoreAccessClaimResource;
 
 import java.util.List;
 
-public class DataStoreAccessClaimLifecycleEvent extends LifecycleEvent<DataStoreAccessClaimResource>{
+public class DataStoreAccessClaimLifecycleEvent extends WithStatusLifecycleEvent<DataStoreAccessClaimResource>{
     public static final String ADDRESS = "lifecycle.datastoreaccessclaim";
 
     public DataStoreAccessClaimLifecycleEvent(LifecycleEvent<DataStoreAccessClaimResource> other) {

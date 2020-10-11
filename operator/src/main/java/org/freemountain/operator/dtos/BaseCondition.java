@@ -5,29 +5,21 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 @JsonDeserialize
 @RegisterForReflection
 public class BaseCondition {
-    @JsonProperty("lastProbeTime")
-    private String lastProbeTime;
-
     @JsonProperty("lastTransitionTime")
-    private String lastTransitionTime;
+    protected String lastTransitionTime = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
 
     @JsonProperty("status")
-    private String status = "True";
+    protected String status = "True";
 
-    @JsonProperty("lastProbeTime")
-    public String getLastProbeTime() {
-        return lastProbeTime;
-    }
-
-    @JsonProperty("lastProbeTime")
-    public void setLastProbeTime(String lastProbeTime) {
-        this.lastProbeTime = lastProbeTime;
-    }
+    @JsonProperty("type")
+    protected String type;
 
     @JsonProperty("lastTransitionTime")
     public String getLastTransitionTime() {
@@ -49,12 +41,22 @@ public class BaseCondition {
         this.status = status;
     }
 
+    @JsonProperty("type")
+    public String getType() {
+        return type;
+    }
+
+    @JsonProperty("type")
+    public void setType(String type) {
+        this.type = type;
+    }
+
     @Override
     public String toString() {
         return "BaseCondition{" +
-                "lastProbeTime='" + lastProbeTime + '\'' +
-                ", lastTransitionTime='" + lastTransitionTime + '\'' +
+                "lastTransitionTime='" + lastTransitionTime + '\'' +
                 ", status='" + status + '\'' +
+                ", type='" + type + '\'' +
                 '}';
     }
 }

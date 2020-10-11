@@ -5,7 +5,7 @@ import org.freemountain.operator.crds.DataStoreResource;
 
 import java.util.List;
 
-public class DataStoreLifecycleEvent extends LifecycleEvent<DataStoreResource> {
+public class DataStoreLifecycleEvent extends WithStatusLifecycleEvent<DataStoreResource> {
     public static final String ADDRESS = "lifecycle.datastore";
 
 

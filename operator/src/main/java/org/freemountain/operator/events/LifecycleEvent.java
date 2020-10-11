@@ -8,23 +8,26 @@ import java.util.List;
 
 public class LifecycleEvent<T> {
 
-    private final LifecycleType type;
-    private final boolean isInitial;
-    private final boolean isLastInitial;
-    private final T resource;
+    protected   LifecycleType type;
+    protected  boolean isInitial;
+    protected  boolean isLastInitial;
+    protected  T resource;
+    protected  T previousResource;
+
+    public LifecycleEvent(LifecycleType tye, T resource, T previousResource) {
+        this.type = tye;
+        this.resource = resource;
+        this.isInitial = false;
+        this.isLastInitial = false;
+        this.previousResource = previousResource;
+    }
 
     public LifecycleEvent(LifecycleType tye, T resource) {
         this.type = tye;
         this.resource = resource;
         this.isInitial = false;
         this.isLastInitial = false;
-    }
-
-    public LifecycleEvent(LifecycleType tye, T resource, boolean isInitial, boolean isLastInitial) {
-        this.type = tye;
-        this.resource = resource;
-        this.isInitial = isInitial;
-        this.isLastInitial = isInitial && isLastInitial;
+        this.previousResource = null;
     }
 
     public LifecycleEvent(LifecycleEvent<T> other) {
@@ -32,6 +35,7 @@ public class LifecycleEvent<T> {
         this.resource = other.resource;
         this.isInitial = other.isInitial;
         this.isLastInitial = other.isLastInitial;
+        this.previousResource = other.previousResource;
     }
 
     public LifecycleType getType() {
@@ -42,11 +46,46 @@ public class LifecycleEvent<T> {
         return resource;
     }
 
+    public T getPreviousResource() { return previousResource; }
+
     public boolean isInitial() {
         return isInitial;
     }
 
     public boolean isLastInitial() {
         return isLastInitial;
+    }
+
+
+    public  class Builder<T> extends LifecycleEvent<T> {
+        public Builder(LifecycleEvent<T> other) {
+            super(other);
+        }
+
+        public LifecycleEvent<T> build() {
+            return new LifecycleEvent<>(this);
+        }
+
+
+        public void setType(LifecycleType type) {
+            this.type = type;
+        }
+
+        public void setInitial(boolean initial) {
+            isInitial = initial;
+        }
+
+        public void setLastInitial(boolean lastInitial) {
+            isLastInitial = lastInitial;
+        }
+
+        public void setResource(T resource) {
+            this.resource = resource;
+        }
+
+        public void setPreviousResource(T previousResource) {
+            this.previousResource = previousResource;
+        }
+
     }
 }

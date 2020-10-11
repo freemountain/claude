@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.*;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
+import io.fabric8.kubernetes.client.informers.SharedInformerFactory;
 import io.smallrye.mutiny.operators.multi.processors.UnicastProcessor;
 import io.smallrye.reactive.messaging.annotations.Broadcast;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
@@ -21,37 +22,14 @@ import org.reactivestreams.Publisher;
 
 import javax.inject.Inject;
 
-public class JobCacheEmitter extends ResourceCacheEmitterInformer<Job> {
-    private static final Logger LOGGER = Logger.getLogger(JobCacheEmitter.class);
-
-    @Override
-    protected SharedIndexInformer<Job> createInformer() {
-        return informerFactory().sharedIndexInformerFor(Job.class, JobList.class, 60 *1000);
-    }
-
-    @Override
-    protected ResourceEventHandler<Job> createHandler(UnicastProcessor<LifecycleEvent<Job>> buffer) {
-        return new ResourceEventHandler<>() {
-            @Override
-            public void onAdd(Job obj) {
-                buffer.onNext(new LifecycleEvent<>(LifecycleType.ADDED, obj));
-            }
-
-            @Override
-            public void onUpdate(Job oldObj, Job newObj) {
-                buffer.onNext(new LifecycleEvent<>(LifecycleType.MODIFIED, newObj));
-            }
-
-            @Override
-            public void onDelete(Job obj, boolean deletedFinalStateUnknown) {
-                buffer.onNext(new LifecycleEvent<>(LifecycleType.DELETED, obj));
-            }
-        };
-    }
+public class JobCacheEmitter extends CachedEmitter<Job> {
+    static class JobHandler extends LifecycleClient.KubernetesEventHandler<Job> implements ResourceEventHandler<Job> {};
 
     @Outgoing(JobLifecycleEvent.ADDRESS)
     @Broadcast
     Publisher<JobLifecycleEvent> connect() {
-        return watch().onItem().transform(JobLifecycleEvent::new);
+        SharedIndexInformer<Job> informer = getInformerFactory().sharedIndexInformerFor(Job.class, JobList.class, 60 *1000);
+        LifecycleClient<Job> client = new LifecycleClient<Job>(informer, new JobHandler());
+        return super.connect(client).onItem().transform(JobLifecycleEvent::new);
     }
 }
