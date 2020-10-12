@@ -1,4 +1,5 @@
 package org.freemountain.operator.templates;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.batch.Job;
@@ -22,16 +23,28 @@ public class JobTemplateService {
     @Inject
     InstanceConfig instanceConfig;
 
+    @Inject
+    ObjectMapper mapper;
+
     public Optional<DataStoreJobTemplate> buildCreateDataStoreTemplate(DataStoreResource resource) {
                return  configProvider
                         .getConfig(resource.getSpec().getProvider())
-                        .map(dataStoreProviderConfig -> new DataStoreJobTemplate.CreateDataStore(instanceConfig, dataStoreProviderConfig, resource));
+                        .map(dataStoreProviderConfig -> new DataStoreJobTemplate.CreateDataStore(dataStoreProviderConfig, resource))
+                        .map(this::inject)
+                       ;
     }
 
     public Optional<DataStoreJobTemplate> buildCreateUserTemplate(DataStoreResource resource, DataStoreAccessClaimResource dataStoreAccessClaimResource, DataStoreUser user) {
         return  configProvider
                 .getConfig(resource.getSpec().getProvider())
-                .map(dataStoreProviderConfig -> new DataStoreJobTemplate.CreateUser(instanceConfig, dataStoreProviderConfig, resource, dataStoreAccessClaimResource, user));
+                .map(dataStoreProviderConfig -> new DataStoreJobTemplate.CreateUser(dataStoreProviderConfig, resource, dataStoreAccessClaimResource, user))
+                .map(this::inject);
     }
 
+    DataStoreJobTemplate inject(DataStoreJobTemplate template) {
+        template.mapper = mapper;
+        template.instanceConfig = instanceConfig;
+
+        return template;
+    }
 }

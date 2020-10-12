@@ -1,11 +1,13 @@
 package org.freemountain.operator.templates;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import org.freemountain.operator.common.Constants;
 import org.freemountain.operator.common.InstanceConfig;
+import org.freemountain.operator.common.ResourceHash;
 import org.freemountain.operator.crds.DataStoreAccessClaimResource;
 import org.freemountain.operator.crds.DataStoreResource;
 import org.freemountain.operator.dtos.DataStoreProviderConfig;
@@ -15,8 +17,8 @@ import java.util.*;
 
 public abstract class DataStoreJobTemplate extends JobTemplate {
     public static class CreateDataStore extends DataStoreJobTemplate {
-        public CreateDataStore(InstanceConfig instanceConfig, DataStoreProviderConfig dataStoreProviderConfig, DataStoreResource dataStoreResource) {
-            super(instanceConfig, dataStoreProviderConfig, dataStoreResource);
+        public CreateDataStore( DataStoreProviderConfig dataStoreProviderConfig, DataStoreResource dataStoreResource) {
+            super( dataStoreProviderConfig, dataStoreResource);
             this.typeName = "create-datastore";
         }
 
@@ -32,8 +34,8 @@ public abstract class DataStoreJobTemplate extends JobTemplate {
         DataStoreUser user;
         DataStoreAccessClaimResource dataStoreAccessClaimResource;
 
-        public CreateUser(InstanceConfig instanceConfig, DataStoreProviderConfig dataStoreProviderConfig, DataStoreResource dataStoreResource, DataStoreAccessClaimResource dataStoreAccessClaimResource, DataStoreUser user) {
-            super(instanceConfig, dataStoreProviderConfig, dataStoreResource);
+        public CreateUser(DataStoreProviderConfig dataStoreProviderConfig, DataStoreResource dataStoreResource, DataStoreAccessClaimResource dataStoreAccessClaimResource, DataStoreUser user) {
+            super(dataStoreProviderConfig, dataStoreResource);
             this.dataStoreAccessClaimResource = dataStoreAccessClaimResource;
             this.user= user;
             this.typeName = "create-user";
@@ -54,6 +56,7 @@ public abstract class DataStoreJobTemplate extends JobTemplate {
     }
 
 
+    protected ObjectMapper mapper;
     protected InstanceConfig instanceConfig;
     protected DataStoreProviderConfig dataStoreProviderConfig;
     protected DataStoreResource dataStoreResource;
@@ -63,8 +66,7 @@ public abstract class DataStoreJobTemplate extends JobTemplate {
     abstract public List<String> getCommand();
 
 
-    public DataStoreJobTemplate(InstanceConfig instanceConfig, DataStoreProviderConfig dataStoreProviderConfig, DataStoreResource dataStoreResource) {
-        this.instanceConfig = instanceConfig;
+    public DataStoreJobTemplate(DataStoreProviderConfig dataStoreProviderConfig, DataStoreResource dataStoreResource) {
         this.dataStoreProviderConfig = dataStoreProviderConfig;
         this.dataStoreResource = dataStoreResource;
     }
@@ -81,6 +83,18 @@ public abstract class DataStoreJobTemplate extends JobTemplate {
         labels.put(Constants.INSTANCE_ID_LABEL, instanceConfig.getId());
 
         return labels;
+    }
+
+    @Override
+    public Map<String, String> getAnnotations() {
+        var annotations =  super.getAnnotations();
+
+        getOwner()
+                .map(owner -> ResourceHash.hash(mapper, owner))
+                .map(hash -> ResourceHash.toJson(mapper, hash))
+                .ifPresent(ownerHash -> annotations.put(Constants.RESOURCE_HASH_ANNOTATION, ownerHash));
+
+        return annotations;
     }
 
     @Override

@@ -1,17 +1,14 @@
 package org.freemountain.operator.operators;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.DoneableSecret;
-import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.freemountain.operator.caches.DataStoreAccessClaimCacheEmitter;
 import org.freemountain.operator.caches.DataStoreCacheEmitter;
-import org.freemountain.operator.common.*;
 import org.freemountain.operator.crds.*;
-import org.freemountain.operator.dtos.BaseCondition;
 import org.freemountain.operator.dtos.DataStoreUser;
 import org.freemountain.operator.events.DataStoreAccessClaimLifecycleEvent;
 import org.freemountain.operator.events.JobLifecycleEvent;
@@ -44,11 +41,15 @@ public class DataStoreAccessClaimOperator {
 
     @Inject
     DataStoreAccessClaimApiClient dataStoreAccessClaimResourceClient;
+
+    @Inject
+    ObjectMapper mapper;
+
     JobEventConditionUpdater<DataStoreAccessClaimResource> jobCondition;
 
     @PostConstruct
     public void init() {
-        jobCondition = new JobEventConditionUpdater<>(dataStoreAccessClaimCacheEmitter, dataStoreAccessClaimResourceClient);
+        jobCondition = new JobEventConditionUpdater<>(mapper, dataStoreAccessClaimCacheEmitter, dataStoreAccessClaimResourceClient);
     }
 
     @Incoming(JobLifecycleEvent.ADDRESS)

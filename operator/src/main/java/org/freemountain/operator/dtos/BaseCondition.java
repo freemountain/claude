@@ -1,17 +1,30 @@
 package org.freemountain.operator.dtos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.Optional;
 
 @JsonDeserialize
 @RegisterForReflection
-public class BaseCondition {
+@JsonPropertyOrder({
+       // "apiVersion",
+       // "kind",
+       // "metadata",
+      //  "lastProbeTime",
+        "lastTransitionTime",
+        //"message",
+        //"reason",
+        "status",
+        "type"
+})
+public class BaseCondition implements Comparable<Object> {
     @JsonProperty("lastTransitionTime")
     protected String lastTransitionTime = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
 
@@ -58,5 +71,14 @@ public class BaseCondition {
                 ", status='" + status + '\'' +
                 ", type='" + type + '\'' +
                 '}';
+    }
+
+    @Override
+    public int compareTo(Object o) {
+        return Comparator
+                .comparing(BaseCondition::getLastTransitionTime)
+                .thenComparing(BaseCondition::getStatus)
+                .thenComparing(BaseCondition::getType)
+                .compare(this, (BaseCondition) o);
     }
 }

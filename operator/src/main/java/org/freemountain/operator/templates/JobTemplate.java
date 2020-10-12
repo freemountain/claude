@@ -47,6 +47,7 @@ public abstract class JobTemplate {
                 .withApiVersion("batch/v1")
                 .withNewMetadata()
                 .withName(getName())
+                .withAnnotations(getAnnotations())
                 .withLabels(getLabels())
                 .withOwnerReferences(getOwnerReferences())
                 .endMetadata()
@@ -63,6 +64,9 @@ public abstract class JobTemplate {
     }
 
     public Map<String, String> getLabels() {
+        return new HashMap<>();
+    }
+    public Map<String, String> getAnnotations() {
         return new HashMap<>();
     }
 }
