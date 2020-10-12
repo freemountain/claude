@@ -1,5 +1,6 @@
 package org.freemountain.operator.crds;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.quarkus.runtime.annotations.RegisterForReflection;
@@ -10,13 +11,20 @@ import org.freemountain.operator.dtos.BaseStatus;
 
 @JsonDeserialize
 @RegisterForReflection
+@JsonPropertyOrder({
+        "apiVersion",
+        "kind",
+        "metadata",
+        "spec",
+        "status"
+})
 public class DataStoreResource extends CustomResource implements HasBaseStatus {
     private DataStoreSpec spec;
 
     private BaseStatus status;
 
     public DataStoreResource() {
-        super(CRD.DataStore.KIND);
+        super(CRD.DATA_STORE_KIND);
         setApiVersion(CRD.API_VERSION);
     }
 

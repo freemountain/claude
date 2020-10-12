@@ -11,7 +11,7 @@ public class DataStoreAccessClaimResource extends CustomResource implements HasB
     private DataStoreAccessClaimSpec spec;
 
     public DataStoreAccessClaimResource() {
-        super(CRD.DataStoreAccessClaim.KIND);
+        super(CRD.ACCESS_CLAIM_KIND);
         setApiVersion(CRD.API_VERSION);
     }
 
