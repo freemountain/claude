@@ -10,6 +10,14 @@ public enum JobState {
     SUCCEEDED,
     FAILED;
 
+    public Optional<JobState> getFinishedState() {
+        switch (this) {
+            case ACTIVE: return Optional.of(ACTIVE);
+            case FAILED: return Optional.of(FAILED);
+            default: return Optional.empty();
+        }
+    }
+
     public static JobState from(Job job) {
         if(job == null) {
             return null;

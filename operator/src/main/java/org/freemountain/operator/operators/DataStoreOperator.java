@@ -40,7 +40,7 @@ public class DataStoreOperator {
 
     @PostConstruct
     public void init() {
-        jobCondition = new JobEventConditionUpdater<>(mapper, dataStoreCache, dataStoreClient);
+        jobCondition = new JobEventConditionUpdater<>(mapper, dataStoreCache, dataStoreClient, null);
     }
 
     @Incoming(JobLifecycleEvent.ADDRESS)

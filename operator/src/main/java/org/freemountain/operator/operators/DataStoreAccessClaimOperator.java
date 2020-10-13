@@ -49,7 +49,7 @@ public class DataStoreAccessClaimOperator {
 
     @PostConstruct
     public void init() {
-        jobCondition = new JobEventConditionUpdater<>(mapper, dataStoreAccessClaimCacheEmitter, dataStoreAccessClaimResourceClient);
+        jobCondition = new JobEventConditionUpdater<>(mapper, dataStoreAccessClaimCacheEmitter, dataStoreAccessClaimResourceClient, null);
     }
 
     @Incoming(JobLifecycleEvent.ADDRESS)
