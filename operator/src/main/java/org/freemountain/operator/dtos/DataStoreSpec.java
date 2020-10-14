@@ -1,7 +1,6 @@
 package org.freemountain.operator.dtos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.quarkus.runtime.annotations.RegisterForReflection;
@@ -33,9 +32,6 @@ public class DataStoreSpec implements KubernetesResource {
 
     @Override
     public String toString() {
-        return "DataStoreSpec{" +
-                "provider='" + provider + '\'' +
-                ", name='" + name + '\'' +
-                '}';
+        return "DataStoreSpec{" + "provider='" + provider + '\'' + ", name='" + name + '\'' + '}';
     }
 }

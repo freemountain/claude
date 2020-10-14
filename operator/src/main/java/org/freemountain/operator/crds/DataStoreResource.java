@@ -6,18 +6,12 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import org.freemountain.operator.common.CRD;
 import org.freemountain.operator.common.HasBaseStatus;
-import org.freemountain.operator.dtos.DataStoreSpec;
 import org.freemountain.operator.dtos.BaseStatus;
+import org.freemountain.operator.dtos.DataStoreSpec;
 
 @JsonDeserialize
 @RegisterForReflection
-@JsonPropertyOrder({
-        "apiVersion",
-        "kind",
-        "metadata",
-        "spec",
-        "status"
-})
+@JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 public class DataStoreResource extends CustomResource implements HasBaseStatus {
     private DataStoreSpec spec;
 
@@ -46,9 +40,12 @@ public class DataStoreResource extends CustomResource implements HasBaseStatus {
 
     @Override
     public String toString() {
-        return "DataStoreResource{" +
-                "spec=" + spec +
-                ", status=" + status +
-                "} " + super.toString();
+        return "DataStoreResource{"
+                + "spec="
+                + spec
+                + ", status="
+                + status
+                + "} "
+                + super.toString();
     }
 }

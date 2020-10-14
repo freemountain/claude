@@ -3,11 +3,10 @@ package org.freemountain.operator.common;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import java.util.List;
 import org.freemountain.operator.dtos.BaseCondition;
 import org.freemountain.operator.dtos.BaseStatus;
 import org.jboss.logging.Logger;
-
-import java.util.List;
 
 public class StatusOperation<T extends HasMetadata & HasBaseStatus> {
     private static final Logger LOGGER = Logger.getLogger(StatusOperation.class);
@@ -32,7 +31,5 @@ public class StatusOperation<T extends HasMetadata & HasBaseStatus> {
             LOGGER.warnf("updateStatus failed with '%s'", e.getMessage());
             return null;
         }
-
-
     }
 }

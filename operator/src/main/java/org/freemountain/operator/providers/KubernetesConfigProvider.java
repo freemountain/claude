@@ -1,17 +1,14 @@
 package org.freemountain.operator.providers;
 
-import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.freemountain.operator.common.Constants;
-import org.freemountain.operator.common.InstanceConfig;
-
-import javax.enterprise.inject.Produces;
-import javax.inject.Named;
-import javax.inject.Singleton;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Optional;
+import javax.enterprise.inject.Produces;
+import javax.inject.Named;
+import javax.inject.Singleton;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.freemountain.operator.common.InstanceConfig;
 
 public class KubernetesConfigProvider {
     private static final String SCOPE = "Namespaced";
@@ -24,8 +21,10 @@ public class KubernetesConfigProvider {
     @Singleton
     @Named("namespace")
     String findNamespace() throws IOException {
-        if(namespaceConfigProperty.isEmpty()) {
-            return new String(Files.readAllBytes(Paths.get("/var/run/secrets/kubernetes.io/serviceaccount/namespace")));
+        if (namespaceConfigProperty.isEmpty()) {
+            return new String(
+                    Files.readAllBytes(
+                            Paths.get("/var/run/secrets/kubernetes.io/serviceaccount/namespace")));
         }
 
         return namespaceConfigProperty.get();
@@ -36,5 +35,4 @@ public class KubernetesConfigProvider {
     InstanceConfig getInstanceConfig() {
         return new InstanceConfig();
     }
-
 }

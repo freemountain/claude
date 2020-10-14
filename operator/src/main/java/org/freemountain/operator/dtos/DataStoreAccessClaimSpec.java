@@ -3,7 +3,6 @@ package org.freemountain.operator.dtos;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.quarkus.runtime.annotations.RegisterForReflection;
-
 import java.util.List;
 
 @JsonDeserialize
@@ -44,10 +43,13 @@ public class DataStoreAccessClaimSpec {
 
     @Override
     public String toString() {
-        return "DataStoreAccessClaimSpec{" +
-                "roles=" + roles +
-                ", dataStoreSelector=" + dataStoreSelector +
-                ", secretSelector=" + secretSelector +
-                '}';
+        return "DataStoreAccessClaimSpec{"
+                + "roles="
+                + roles
+                + ", dataStoreSelector="
+                + dataStoreSelector
+                + ", secretSelector="
+                + secretSelector
+                + '}';
     }
 }

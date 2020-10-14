@@ -2,16 +2,15 @@ package org.freemountain.operator.caches;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.smallrye.mutiny.Uni;
-import org.freemountain.operator.common.LifecycleType;
-import org.freemountain.operator.common.ResourceUtils;
-import org.freemountain.operator.events.LifecycleEvent;
-import org.jboss.logging.Logger;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import org.freemountain.operator.common.LifecycleType;
+import org.freemountain.operator.common.ResourceUtils;
+import org.freemountain.operator.events.LifecycleEvent;
+import org.jboss.logging.Logger;
 
 public class LifecycleCache<T extends HasMetadata> {
     private static final Logger LOGGER = Logger.getLogger(LifecycleCache.class);
@@ -38,7 +37,9 @@ public class LifecycleCache<T extends HasMetadata> {
             return Uni.createFrom().item(true);
         }
 
-        LOGGER.debugf("Skipped invalid %s event (%s)", event.getType(), ResourceUtils.inspect(event.getResource()));
+        LOGGER.debugf(
+                "Skipped invalid %s event (%s)",
+                event.getType(), ResourceUtils.inspect(event.getResource()));
         return Uni.createFrom().item(false);
     }
 
@@ -49,6 +50,4 @@ public class LifecycleCache<T extends HasMetadata> {
     public Collection<T> values() {
         return readonlyCache.values();
     }
-
-
 }

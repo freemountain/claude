@@ -3,9 +3,7 @@ package org.freemountain.operator.dtos;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.quarkus.runtime.annotations.RegisterForReflection;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,8 +26,6 @@ public class BaseStatus {
 
     @Override
     public String toString() {
-        return "DataStoreStatus{" +
-                "conditions=" + conditions +
-                '}';
+        return "DataStoreStatus{" + "conditions=" + conditions + '}';
     }
 }

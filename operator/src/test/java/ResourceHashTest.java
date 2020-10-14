@@ -1,6 +1,8 @@
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import java.util.LinkedList;
+import java.util.UUID;
 import org.freemountain.operator.common.HasBaseStatus;
 import org.freemountain.operator.common.ResourceHash;
 import org.freemountain.operator.crds.DataStoreResource;
@@ -9,10 +11,6 @@ import org.freemountain.operator.dtos.BaseStatus;
 import org.freemountain.operator.dtos.DataStoreSpec;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.time.ZonedDateTime;
-import java.util.LinkedList;
-import java.util.UUID;
 
 public class ResourceHashTest {
     ObjectMapper mapper = new ObjectMapper();
@@ -23,16 +21,17 @@ public class ResourceHashTest {
         meta.setUid(UUID.randomUUID().toString());
         meta.setGeneration((long) 100);
         target.setMetadata(meta);
-
     }
+
     public static void addConditions(HasBaseStatus target) {
         BaseStatus status = target.getStatus() == null ? new BaseStatus() : target.getStatus();
         target.setStatus(status);
 
-        if(status.getConditions() == null) {
+        if (status.getConditions() == null) {
             status.setConditions(new LinkedList<>());
         }
     }
+
     @Test
     public void test() {
         BaseCondition conditionA = new BaseCondition();

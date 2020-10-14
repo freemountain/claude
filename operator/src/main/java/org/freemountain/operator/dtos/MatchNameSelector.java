@@ -10,19 +10,16 @@ public class MatchNameSelector {
     @JsonProperty("matchName")
     private String matchName;
 
-   public String getMatchName() {
+    public String getMatchName() {
         return matchName;
     }
 
     public void setMatchName(String matchName) {
-       this.matchName = matchName;
+        this.matchName = matchName;
     }
-
 
     @Override
     public String toString() {
-        return "MatchNameSelector{" +
-                "matchName='" + matchName + '\'' +
-                '}';
+        return "MatchNameSelector{" + "matchName='" + matchName + '\'' + '}';
     }
 }

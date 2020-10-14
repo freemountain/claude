@@ -5,6 +5,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import java.util.*;
 import org.freemountain.operator.common.Constants;
 import org.freemountain.operator.common.InstanceConfig;
 import org.freemountain.operator.common.ResourceHash;
@@ -13,19 +14,23 @@ import org.freemountain.operator.crds.DataStoreResource;
 import org.freemountain.operator.dtos.DataStoreProviderConfig;
 import org.freemountain.operator.dtos.DataStoreUser;
 
-import java.util.*;
-
 public abstract class DataStoreJobTemplate extends JobTemplate {
     public static class CreateDataStore extends DataStoreJobTemplate {
-        public CreateDataStore( DataStoreProviderConfig dataStoreProviderConfig, DataStoreResource dataStoreResource) {
-            super( dataStoreProviderConfig, dataStoreResource);
+        public CreateDataStore(
+                DataStoreProviderConfig dataStoreProviderConfig,
+                DataStoreResource dataStoreResource) {
+            super(dataStoreProviderConfig, dataStoreResource);
             this.typeName = "create-datastore";
         }
 
         @Override
         public List<String> getCommand() {
             List<String> command = new LinkedList<>();
-            Collections.addAll(command, dataStoreProviderConfig.getJob().getEntry(), "createDatabase", getDataStoreName());
+            Collections.addAll(
+                    command,
+                    dataStoreProviderConfig.getJob().getEntry(),
+                    "createDatabase",
+                    getDataStoreName());
             return command;
         }
     }
@@ -34,17 +39,27 @@ public abstract class DataStoreJobTemplate extends JobTemplate {
         DataStoreUser user;
         DataStoreAccessClaimResource dataStoreAccessClaimResource;
 
-        public CreateUser(DataStoreProviderConfig dataStoreProviderConfig, DataStoreResource dataStoreResource, DataStoreAccessClaimResource dataStoreAccessClaimResource, DataStoreUser user) {
+        public CreateUser(
+                DataStoreProviderConfig dataStoreProviderConfig,
+                DataStoreResource dataStoreResource,
+                DataStoreAccessClaimResource dataStoreAccessClaimResource,
+                DataStoreUser user) {
             super(dataStoreProviderConfig, dataStoreResource);
             this.dataStoreAccessClaimResource = dataStoreAccessClaimResource;
-            this.user= user;
+            this.user = user;
             this.typeName = "create-user";
         }
 
         @Override
         public List<String> getCommand() {
             List<String> command = new LinkedList<>();
-            Collections.addAll(command, dataStoreProviderConfig.getJob().getEntry(), "createUserWithPrivileges", getDataStoreName(), user.getUsername(), user.getPassword());
+            Collections.addAll(
+                    command,
+                    dataStoreProviderConfig.getJob().getEntry(),
+                    "createUserWithPrivileges",
+                    getDataStoreName(),
+                    user.getUsername(),
+                    user.getPassword());
             command.addAll(user.getRoles());
             return command;
         }
@@ -55,7 +70,6 @@ public abstract class DataStoreJobTemplate extends JobTemplate {
         }
     }
 
-
     protected ObjectMapper mapper;
     protected InstanceConfig instanceConfig;
     protected DataStoreProviderConfig dataStoreProviderConfig;
@@ -63,10 +77,10 @@ public abstract class DataStoreJobTemplate extends JobTemplate {
     protected String typeName = "";
     protected final String nameSuffix = String.valueOf(new Date().getTime());
 
-    abstract public List<String> getCommand();
+    public abstract List<String> getCommand();
 
-
-    public DataStoreJobTemplate(DataStoreProviderConfig dataStoreProviderConfig, DataStoreResource dataStoreResource) {
+    public DataStoreJobTemplate(
+            DataStoreProviderConfig dataStoreProviderConfig, DataStoreResource dataStoreResource) {
         this.dataStoreProviderConfig = dataStoreProviderConfig;
         this.dataStoreResource = dataStoreResource;
     }
@@ -74,7 +88,6 @@ public abstract class DataStoreJobTemplate extends JobTemplate {
     public String getDataStoreName() {
         return dataStoreResource.getSpec().getName();
     }
-
 
     @Override
     public Map<String, String> getLabels() {
@@ -87,12 +100,14 @@ public abstract class DataStoreJobTemplate extends JobTemplate {
 
     @Override
     public Map<String, String> getAnnotations() {
-        var annotations =  super.getAnnotations();
+        var annotations = super.getAnnotations();
 
         getOwner()
                 .map(owner -> ResourceHash.hash(mapper, owner))
                 .map(hash -> ResourceHash.toJson(mapper, hash))
-                .ifPresent(ownerHash -> annotations.put(Constants.RESOURCE_HASH_ANNOTATION, ownerHash));
+                .ifPresent(
+                        ownerHash ->
+                                annotations.put(Constants.RESOURCE_HASH_ANNOTATION, ownerHash));
 
         return annotations;
     }
@@ -125,14 +140,29 @@ public abstract class DataStoreJobTemplate extends JobTemplate {
         return Collections.singleton(container);
     }
 
-
     public List<EnvVar> getContainerEnvironmentVariables() {
         List<EnvVar> env = new LinkedList<>();
 
-        env.add(new EnvVarBuilder().withName("DB_HOST").withValue(dataStoreProviderConfig.getHost()).build());
-        env.add(new EnvVarBuilder().withName("DB_PORT").withValue(dataStoreProviderConfig.getPort()).build());
-        env.add(new EnvVarBuilder().withName("DB_ROOT_USER").withValue(dataStoreProviderConfig.getUsername()).build());
-        env.add(new EnvVarBuilder().withName("DB_ROOT_PASSWORD").withValue(dataStoreProviderConfig.getPassword()).build());
+        env.add(
+                new EnvVarBuilder()
+                        .withName("DB_HOST")
+                        .withValue(dataStoreProviderConfig.getHost())
+                        .build());
+        env.add(
+                new EnvVarBuilder()
+                        .withName("DB_PORT")
+                        .withValue(dataStoreProviderConfig.getPort())
+                        .build());
+        env.add(
+                new EnvVarBuilder()
+                        .withName("DB_ROOT_USER")
+                        .withValue(dataStoreProviderConfig.getUsername())
+                        .build());
+        env.add(
+                new EnvVarBuilder()
+                        .withName("DB_ROOT_PASSWORD")
+                        .withValue(dataStoreProviderConfig.getPassword())
+                        .build());
 
         return env;
     }

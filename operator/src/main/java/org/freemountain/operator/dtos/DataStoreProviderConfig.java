@@ -5,8 +5,7 @@ public class DataStoreProviderConfig {
         private String image;
         private String entry;
 
-        public JobSpec() {
-        }
+        public JobSpec() {}
 
         public JobSpec(String image, String entry) {
             this.image = image;
@@ -31,13 +30,9 @@ public class DataStoreProviderConfig {
 
         @Override
         public String toString() {
-            return "JobSpec{" +
-                    "image='" + image + '\'' +
-                    ", entry='" + entry + '\'' +
-                    '}';
+            return "JobSpec{" + "image='" + image + '\'' + ", entry='" + entry + '\'' + '}';
         }
     }
-
 
     private String name;
     private String password;
@@ -94,16 +89,26 @@ public class DataStoreProviderConfig {
         this.job = job;
     }
 
-
     @Override
     public String toString() {
-        return "DataStoreConfig{" +
-                "name='" + name + '\'' +
-                ", password='" + password + '\'' +
-                ", username='" + username + '\'' +
-                ", host='" + host + '\'' +
-                ", port='" + port + '\'' +
-                ", job=" + job +
-                '}';
+        return "DataStoreConfig{"
+                + "name='"
+                + name
+                + '\''
+                + ", password='"
+                + password
+                + '\''
+                + ", username='"
+                + username
+                + '\''
+                + ", host='"
+                + host
+                + '\''
+                + ", port='"
+                + port
+                + '\''
+                + ", job="
+                + job
+                + '}';
     }
 }

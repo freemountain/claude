@@ -1,7 +1,6 @@
 package org.freemountain.operator.dtos;
 
 import java.util.Collection;
-import java.util.Set;
 
 public class DataStoreUser {
     private final String username;
@@ -28,10 +27,15 @@ public class DataStoreUser {
 
     @Override
     public String toString() {
-        return "DataStoreUser{" +
-                "username='" + username + '\'' +
-                ", password='" + password + '\'' +
-                ", roles=" + roles +
-                '}';
+        return "DataStoreUser{"
+                + "username='"
+                + username
+                + '\''
+                + ", password='"
+                + password
+                + '\''
+                + ", roles="
+                + roles
+                + '}';
     }
 }

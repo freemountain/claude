@@ -1,14 +1,12 @@
 package org.freemountain.operator.providers;
 
-import org.eclipse.microprofile.config.ConfigProvider;
-import org.freemountain.operator.dtos.DataStoreProviderConfig;
-
-import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
+import javax.annotation.PostConstruct;
+import javax.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.freemountain.operator.dtos.DataStoreProviderConfig;
 import org.jboss.logging.Logger;
 
 @ApplicationScoped
@@ -26,7 +24,7 @@ public class DataStoreConfigProvider {
     void load() {
         this.configMap.clear();
 
-        for (String key: getKeys()) {
+        for (String key : getKeys()) {
             LOG.debugf("Loading DataStore configuration '%s'", key);
             DataStoreProviderConfig config = getDataStoreConfigValue(key);
             configMap.put(key, config);
@@ -47,12 +45,12 @@ public class DataStoreConfigProvider {
         return config;
     }
 
-    private String getConfigStringValue( String... path) {
+    private String getConfigStringValue(String... path) {
         return getConfigValue(String.class, path);
     }
 
     private <T> T getConfigValue(Class<T> type, String... path) {
-        List<String> fullPath =  new LinkedList<String>(Collections.singleton(CONFIG_PREFIX));
+        List<String> fullPath = new LinkedList<String>(Collections.singleton(CONFIG_PREFIX));
         fullPath.addAll(Arrays.asList(path));
         String key = String.join(".", fullPath);
 
@@ -60,7 +58,8 @@ public class DataStoreConfigProvider {
     }
 
     private Set<String> getKeys() {
-       return StreamSupport.stream(ConfigProvider.getConfig().getPropertyNames().spliterator(), false)
+        return StreamSupport.stream(
+                        ConfigProvider.getConfig().getPropertyNames().spliterator(), false)
                 .filter(prop -> prop.startsWith(CONFIG_PREFIX))
                 .map(prop -> prop.split("\\."))
                 .filter(prop -> prop.length >= 2)

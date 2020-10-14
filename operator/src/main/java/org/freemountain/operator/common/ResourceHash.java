@@ -6,11 +6,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.fabric8.kubernetes.api.model.ManagedFieldsEntry;
-import io.vertx.core.json.JsonArray;
-import org.freemountain.operator.dtos.BaseCondition;
-
 import java.util.Comparator;
 import java.util.Objects;
+import org.freemountain.operator.dtos.BaseCondition;
 
 public class ResourceHash {
     protected int metadata = 0;
@@ -40,14 +38,12 @@ public class ResourceHash {
         if (this == o) return true;
         if (!(o instanceof ResourceHash)) return false;
         ResourceHash that = (ResourceHash) o;
-        return metadata == that.metadata &&
-                spec == that.spec &&
-                status == that.status;
+        return metadata == that.metadata && spec == that.spec && status == that.status;
     }
 
     @Override
     public int hashCode() {
-        if(metadata == 0&& spec == 0 && status == 0) {
+        if (metadata == 0 && spec == 0 && status == 0) {
             return 0;
         }
         return Objects.hash(metadata, spec, status);
@@ -55,12 +51,17 @@ public class ResourceHash {
 
     @Override
     public String toString() {
-        return "ResourceHash{" +
-                "metadata=" + metadata +
-                ", spec=" + spec +
-                ", status=" + status +
-                ", (hashcode= " + this.hashCode() + ")" +
-                '}';
+        return "ResourceHash{"
+                + "metadata="
+                + metadata
+                + ", spec="
+                + spec
+                + ", status="
+                + status
+                + ", (hashcode= "
+                + this.hashCode()
+                + ")"
+                + '}';
     }
 
     public static class Builder extends ResourceHash {
@@ -119,7 +120,7 @@ public class ResourceHash {
     }
 
     private static int hash(JsonNode node) {
-        if(node == null) {
+        if (node == null) {
             return 0;
         }
 
@@ -128,12 +129,12 @@ public class ResourceHash {
 
     private static int hashStatus(ObjectMapper mapper, JsonNode status) {
         JsonNode normalized = JsonUtils.normalizeWithoutEmptyContainerAndNull(status);
-        if(normalized == null || !normalized.isObject() || normalized.isEmpty()) {
+        if (normalized == null || !normalized.isObject() || normalized.isEmpty()) {
             return 0;
         }
 
         JsonNode conditions = normalized.get("conditions");
-        if(conditions != null && conditions.isArray()) {
+        if (conditions != null && conditions.isArray()) {
             JsonUtils.sortWithType(mapper, (ArrayNode) conditions, BaseCondition.class);
         }
 
@@ -142,21 +143,21 @@ public class ResourceHash {
 
     private static int hashMetadata(ObjectMapper mapper, JsonNode metadata) {
         JsonNode normalized = JsonUtils.normalizeWithoutEmptyContainerAndNull(metadata);
-        if(normalized == null || !normalized.isObject() || normalized.isEmpty()) {
+        if (normalized == null || !normalized.isObject() || normalized.isEmpty()) {
             return 0;
         }
 
         JsonNode managedFields = normalized.get("managedFields");
-        if(managedFields != null && managedFields.isArray()) {
-            var compare = Comparator.comparing(ManagedFieldsEntry::getApiVersion)
-                    .thenComparing(ManagedFieldsEntry::getFieldsType)
-                    //.thenComparing(ManagedFieldsEntry::getFieldsV1)
-                    .thenComparing(ManagedFieldsEntry::getManager);
-            JsonUtils.sortWithType(mapper, (ArrayNode) managedFields, ManagedFieldsEntry.class, compare);
+        if (managedFields != null && managedFields.isArray()) {
+            var compare =
+                    Comparator.comparing(ManagedFieldsEntry::getApiVersion)
+                            .thenComparing(ManagedFieldsEntry::getFieldsType)
+                            // .thenComparing(ManagedFieldsEntry::getFieldsV1)
+                            .thenComparing(ManagedFieldsEntry::getManager);
+            JsonUtils.sortWithType(
+                    mapper, (ArrayNode) managedFields, ManagedFieldsEntry.class, compare);
         }
 
         return normalized.hashCode();
     }
-
-
 }

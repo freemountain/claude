@@ -14,6 +14,4 @@ public class CRD {
     public static final String ACCESS_CLAIM_KIND = "DataStoreAccessClaim";
     public static final String ACCESS_CLAIM_PLURAL = "datastoreaccessclaims";
     public static final String ACCESS_CLAIM_NAME = ACCESS_CLAIM_PLURAL + "." + Constants.API_GROUP;
-
 }
-

@@ -2,7 +2,6 @@ package org.freemountain.operator.common;
 
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.batch.JobStatus;
-
 import java.util.Optional;
 
 public enum JobState {
@@ -12,14 +11,17 @@ public enum JobState {
 
     public Optional<JobState> getFinishedState() {
         switch (this) {
-            case ACTIVE: return Optional.of(ACTIVE);
-            case FAILED: return Optional.of(FAILED);
-            default: return Optional.empty();
+            case ACTIVE:
+                return Optional.of(ACTIVE);
+            case FAILED:
+                return Optional.of(FAILED);
+            default:
+                return Optional.empty();
         }
     }
 
     public static JobState from(Job job) {
-        if(job == null) {
+        if (job == null) {
             return null;
         }
 
@@ -28,13 +30,13 @@ public enum JobState {
         Integer succeeded = status.getSucceeded();
         Integer failed = status.getFailed();
 
-        if(active != null && succeeded == null && failed == null ) {
+        if (active != null && succeeded == null && failed == null) {
             return ACTIVE;
         }
-        if(active == null && succeeded != null && failed == null ) {
+        if (active == null && succeeded != null && failed == null) {
             return SUCCEEDED;
         }
-        if(active == null && succeeded == null && failed != null ) {
+        if (active == null && succeeded == null && failed != null) {
             return FAILED;
         }
 

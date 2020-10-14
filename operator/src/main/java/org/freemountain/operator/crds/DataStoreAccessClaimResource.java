@@ -33,8 +33,6 @@ public class DataStoreAccessClaimResource extends CustomResource implements HasB
 
     @Override
     public String toString() {
-        return "DataStoreAccessClaimResource{" +
-                "spec=" + spec +
-                '}';
+        return "DataStoreAccessClaimResource{" + "spec=" + spec + '}';
     }
 }
