@@ -6,6 +6,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.batch.Job;
+
+import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.function.Consumer;
 import org.freemountain.operator.caches.CachedEmitter;
@@ -37,30 +39,31 @@ public class JobEventConditionUpdater<T extends HasMetadata & HasBaseStatus> {
         var crd = client.crd();
 
         var job = event.getResource();
-        T owner =
-                Optional.ofNullable(event.getResource())
+        T owner = Optional.ofNullable(event.getResource())
                         .flatMap(resource -> ResourceUtils.getOwningCRD(event.getResource(), crd))
                         .map(OwnerReference::getUid)
                         .flatMap(cache::get)
                         .orElse(null);
 
-        if (owner == null || job == null) {
+        if (owner == null) {
             return;
         }
 
         var currentOwnerHash = ResourceHash.hash(mapper, owner);
         var jobOwnerHash = parseJobOwnerHash(job).orElse(null);
-        boolean specIsTheSame =
-                jobOwnerHash != null && currentOwnerHash.getSpec() == jobOwnerHash.getSpec();
+        if(jobOwnerHash != null && currentOwnerHash.getSpec() != jobOwnerHash.getSpec()) {
+            // The spec was changed after this job was created, which should have triggered a new job
+            return;
+        }
 
-        if (event.getType().equals(LifecycleType.DELETED) && !specIsTheSame) {
+
+        var finishedState = getFinishedState(event).orElse(null);
+        if (event.getType().equals(LifecycleType.DELETED) && finishedState == null) {
+            // The job was deleted before ending, we must create a new job
             reconcile.accept(owner);
         }
 
-        var finishedState = getFinishedState(event).orElse(null);
-        if (finishedState == null) {
-            return;
-        }
+
 
         LOGGER.debugf(
                 "Job '%s' for %s '%s' changed to %s",
@@ -69,6 +72,14 @@ public class JobEventConditionUpdater<T extends HasMetadata & HasBaseStatus> {
                 owner.getMetadata().getName(),
                 finishedState);
         updateReadyCondition(owner, finishedState);
+    }
+
+    void onJobDeletedBeforeFinished(T owner, ZonedDateTime deletionTime) {
+
+    }
+
+    void onJobFinished(T owner, boolean succeeded, ZonedDateTime completionTime) {
+
     }
 
     void updateReadyCondition(T owner, JobState state) {
